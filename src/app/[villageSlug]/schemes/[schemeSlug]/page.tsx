@@ -25,7 +25,23 @@ interface Props {
   params: Promise<{ villageSlug: string; schemeSlug: string }>;
 }
 
-export const dynamic = "force-dynamic";
+export const revalidate = 300;
+
+export async function generateStaticParams() {
+  const villages = ["gulwanch", "mazagaon", "komalwadi"];
+  const schemes = await getVillageSchemes(undefined, 30);
+  const params: Array<{ villageSlug: string; schemeSlug: string }> = [];
+
+  for (const village of villages) {
+    for (const scheme of schemes) {
+      if (scheme.slug) {
+        params.push({ villageSlug: village, schemeSlug: scheme.slug });
+      }
+    }
+  }
+
+  return params;
+}
 
 export default async function SchemeDetailPage({ params }: Props) {
   const { villageSlug, schemeSlug } = await params;

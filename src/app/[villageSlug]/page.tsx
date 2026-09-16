@@ -73,7 +73,15 @@ const iconMap: Record<string, any> = {
   HeartCrack,
 };
 
-export const dynamic = "force-dynamic";
+export const revalidate = 300;
+
+export async function generateStaticParams() {
+  return [
+    { villageSlug: "gulwanch" },
+    { villageSlug: "mazagaon" },
+    { villageSlug: "komalwadi" },
+  ];
+}
 
 export default async function VillageHomePage({ params }: Props) {
   const { villageSlug } = await params;

@@ -53,7 +53,7 @@
     width: 100%;
     max-width: 100vw;
     overflow-x: clip;
-    /* Layer 1: Dedicated Mobile Background */
+    /* Layer 1: Dedicated Fixed Mobile Background */
     background-image: url('/images/home-background-mobile.png');
     background-repeat: no-repeat;
     background-position: center top;
@@ -63,7 +63,7 @@
 
   @media (min-width: 768px) {
     body {
-      /* Layer 1: Dedicated Desktop High-Resolution Background */
+      /* Layer 1: Dedicated Fixed Desktop High-Resolution Background */
       background-image: url('/images/home-background-laptop.png');
       background-size: cover;
       background-position: center top;

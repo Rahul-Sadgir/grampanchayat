@@ -4,7 +4,15 @@ import { Header } from "@/components/public/Header";
 import { Footer } from "@/components/public/Footer";
 import { MobileBottomNav } from "@/components/public/MobileBottomNav";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 300;
+
+export async function generateStaticParams() {
+  return [
+    { villageSlug: "gulwanch" },
+    { villageSlug: "mazagaon" },
+    { villageSlug: "komalwadi" },
+  ];
+}
 
 export default async function VillageLayout({
   children,

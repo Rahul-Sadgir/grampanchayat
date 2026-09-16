@@ -13,7 +13,7 @@ import {
   Users,
 } from "lucide-react";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 300; // Cache for 5 minutes at Edge, revalidated on demand
 
 export default async function RootGatewayPage() {
   const villages = await getAllVillages();
