@@ -33,7 +33,7 @@ export function Footer({ village }: FooterProps) {
       suppressHydrationWarning
     >
       {/* Translucent layer to let the scenic rural illustration shine through with high text legibility */}
-      <div className="w-full bg-[#FBF9F5]/88 backdrop-blur-[0.5px] pt-6 sm:pt-12 pb-20 sm:pb-8">
+      <div className="w-full bg-[#FBF9F5]/88 backdrop-blur-[0.5px] pt-6 sm:pt-12 pb-6 sm:pb-8">
         <div className="max-w-6xl mx-auto px-4">
           {/* Grid: 4 columns on desktop, only Contact column on mobile */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8 mb-6 md:mb-10">
@@ -238,31 +238,31 @@ export function Footer({ village }: FooterProps) {
         </div>
       </div>
 
-      {/* Developed By & Tech Partner Strip */}
-      <div className="w-full bg-[#00271b] text-white py-3 px-4 border-t border-emerald-950 text-xs">
-        <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2.5 text-center sm:text-left">
-          <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-[#F5D77F] animate-pulse" />
-            <span className="text-slate-300 text-[11px] sm:text-xs">
+      {/* Developed By & Tech Partner Strip (with pb-24 on mobile so it clears the fixed bottom nav) */}
+      <div className="w-full bg-[#00271b] text-white pt-4 pb-24 sm:py-3.5 px-4 border-t border-emerald-950 text-xs">
+        <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left">
+          <div className="flex items-center justify-center gap-2">
+            <span className="w-2.5 h-2.5 rounded-full bg-[#F5D77F] animate-pulse shrink-0" />
+            <span className="text-slate-200 text-xs font-medium">
               Designed & Developed by{" "}
-              <strong className="text-[#F5D77F] font-bold">AWAK Tech Solutions</strong>
+              <strong className="text-[#F5D77F] font-bold tracking-wide">AWAK Tech Solutions</strong>
             </span>
           </div>
 
-          <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4 text-[11px] sm:text-xs">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-2.5 sm:gap-4 text-xs w-full sm:w-auto">
             <a
               href="mailto:awak.techsol@gmail.com"
-              className="inline-flex items-center gap-1.5 text-slate-300 hover:text-[#F5D77F] transition-colors"
+              className="inline-flex items-center justify-center gap-2 px-3 py-1.5 rounded-xl bg-emerald-950/80 sm:bg-transparent border border-emerald-800/60 sm:border-transparent text-slate-200 hover:text-[#F5D77F] transition-colors w-full sm:w-auto"
             >
-              <Mail className="w-3.5 h-3.5 text-[#F5D77F]" />
-              <span>awak.techsol@gmail.com</span>
+              <Mail className="w-3.5 h-3.5 text-[#F5D77F] shrink-0" />
+              <span className="font-medium">awak.techsol@gmail.com</span>
             </a>
             <span className="text-emerald-800 hidden sm:inline">•</span>
             <a
               href="tel:+917887663038"
-              className="inline-flex items-center gap-1.5 text-slate-300 hover:text-[#F5D77F] font-mono transition-colors"
+              className="inline-flex items-center justify-center gap-2 px-3 py-1.5 rounded-xl bg-emerald-950/80 sm:bg-transparent border border-emerald-800/60 sm:border-transparent text-slate-200 hover:text-[#F5D77F] font-mono font-bold transition-colors w-full sm:w-auto"
             >
-              <Phone className="w-3.5 h-3.5 text-[#F5D77F]" />
+              <Phone className="w-3.5 h-3.5 text-[#F5D77F] shrink-0" />
               <span>+91 7887663038</span>
             </a>
           </div>
