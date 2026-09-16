@@ -1,0 +1,123 @@
+import { FormSchemaDefinition } from "@/types/form";
+
+export const propertyMutationService = {
+  _id: "svc_prop_mut",
+  name: "फेरफार नोंदणी अर्ज",
+  slug: "property-mutation",
+  description: "मिळकत हस्तांतरण, वारस नोंद व खरेदीखत फेरफार नोंदणीसाठी ऑनलाइन अर्ज.",
+  category: "अर्ज",
+  icon: "Building",
+  actionText: "अर्ज करा",
+  fee: "शासकीय नियमांनुसार",
+  isActive: true,
+};
+
+export const propertyMutationSchema: FormSchemaDefinition = {
+  fields: [
+    {
+      name: "applicantName",
+      label: "अर्जदाराचे संपूर्ण नाव (Applicant Full Name)",
+      type: "text",
+      required: true,
+      placeholder: "उदा. विलास प्रभाकर गायकवाड",
+      section: "applicant",
+    },
+    {
+      name: "mobileNumber",
+      label: "मोबाईल नंबर (Mobile Number)",
+      type: "text",
+      required: true,
+      placeholder: "उदा. ९८XXXXXXXX",
+      section: "applicant",
+    },
+    {
+      name: "email",
+      label: "ईमेल आयडी (Email ID)",
+      type: "email",
+      required: false,
+      placeholder: "उदा. vilas@gmail.com",
+      section: "applicant",
+    },
+    {
+      name: "aadhaarNumber",
+      label: "आधार नंबर (Aadhaar Number)",
+      type: "text",
+      required: true,
+      placeholder: "उदा. 123456789012",
+      section: "applicant",
+    },
+    {
+      name: "propertyOwnerName",
+      label: "फेरफार नोंद करावयाच्या मिळकत धारकाचे नाव (Original Property Owner Name)",
+      type: "text",
+      required: true,
+      placeholder: "मूळ मिळकत धारकाचे नाव",
+      section: "details",
+    },
+    {
+      name: "propertyNumber",
+      label: "मिळकत क्रमांक / घर क्रमांक (Property / House No)",
+      type: "text",
+      required: true,
+      placeholder: "उदा. मिळकत क्र. ८८ / घर क्र. १४५",
+      section: "details",
+    },
+    {
+      name: "mutationType",
+      label: "फेरफार प्रकार (Mutation Type)",
+      type: "select",
+      required: true,
+      section: "details",
+      options: [
+        { label: "खरेदीखत नोंद (Sale Deed)", value: "sale_deed" },
+        { label: "वारस नोंद (Succession / Waras)", value: "waras" },
+        { label: "वाटणीपत्र नोंद (Partition)", value: "partition" },
+        { label: "बक्षीसपत्र नोंद (Gift Deed)", value: "gift_deed" },
+        { label: "हक्कसोड पत्र (Release Deed)", value: "release_deed" },
+      ],
+    },
+    {
+      name: "documentDetails",
+      label: "दस्तऐवज क्रमांक व दिनांक (Registered Deed No & Date)",
+      type: "text",
+      required: true,
+      placeholder: "उदा. नोंदणीकृत दस्त क्र. १४५२ दिनांक १५/०१/२०२५",
+      section: "details",
+    },
+    {
+      name: "registeredDeedDoc",
+      label: "नोंदणीकृत खरेदीखत / बक्षीसपत्र / वाटणीपत्र प्रत",
+      type: "file",
+      required: true,
+      acceptedFileTypes: [".pdf", ".jpg", ".jpeg", ".png"],
+      maxSizeMB: 5,
+      helpText: "दुय्यम निबंधक कार्यालयाकडील नोंदणीकृत दस्तऐवज प्रत (PDF/JPG)",
+      section: "documents",
+    },
+    {
+      name: "deathCertificateDoc",
+      label: "वारस नोंद असल्यास: मूळ खातेदाराचा मृत्यू दाखला",
+      type: "file",
+      required: false,
+      acceptedFileTypes: [".pdf", ".jpg", ".jpeg", ".png"],
+      maxSizeMB: 5,
+      helpText: "वारस नोंदीसाठी मूळ मिळकत धारकाचा मृत्यू दाखला (PDF/JPG)",
+      section: "documents",
+    },
+    {
+      name: "warasAffidavitDoc",
+      label: "वारस शपथपत्र / संमतीपत्र प्रत (Waras Affidavit)",
+      type: "file",
+      required: false,
+      acceptedFileTypes: [".pdf", ".jpg", ".jpeg", ".png"],
+      maxSizeMB: 5,
+      section: "documents",
+    },
+  ],
+};
+
+export const propertyMutationPdf = {
+  title: "फेरफार नोंदणी अर्ज नमुना (PDF)",
+  code: "MUTATION-FORM",
+  fileUrl: "/documents/citizen-services/property-mutation-form.pdf",
+};
