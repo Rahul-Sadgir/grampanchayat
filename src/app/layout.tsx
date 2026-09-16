@@ -1,5 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Inter, Noto_Sans_Devanagari } from "next/font/google";
+import { Suspense } from "react";
+import { TopProgressBar } from "@/components/public/TopProgressBar";
 import "./globals.css";
 
 const inter = Inter({
@@ -46,6 +48,9 @@ export default function RootLayout({
         className="min-h-full flex flex-col font-sans text-slate-900 selection:bg-emerald-200 selection:text-emerald-900"
         suppressHydrationWarning
       >
+        <Suspense fallback={null}>
+          <TopProgressBar />
+        </Suspense>
         {children}
       </body>
     </html>
