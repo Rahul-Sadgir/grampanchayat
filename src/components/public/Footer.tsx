@@ -237,6 +237,37 @@ export function Footer({ village }: FooterProps) {
           </div>
         </div>
       </div>
+
+      {/* Developed By & Tech Partner Strip */}
+      <div className="w-full bg-[#00271b] text-white py-3 px-4 border-t border-emerald-950 text-xs">
+        <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2.5 text-center sm:text-left">
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-[#F5D77F] animate-pulse" />
+            <span className="text-slate-300 text-[11px] sm:text-xs">
+              Designed & Developed by{" "}
+              <strong className="text-[#F5D77F] font-bold">AWAK Tech Solutions</strong>
+            </span>
+          </div>
+
+          <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4 text-[11px] sm:text-xs">
+            <a
+              href="mailto:awak.techsol@gmail.com"
+              className="inline-flex items-center gap-1.5 text-slate-300 hover:text-[#F5D77F] transition-colors"
+            >
+              <Mail className="w-3.5 h-3.5 text-[#F5D77F]" />
+              <span>awak.techsol@gmail.com</span>
+            </a>
+            <span className="text-emerald-800 hidden sm:inline">•</span>
+            <a
+              href="tel:+917887663038"
+              className="inline-flex items-center gap-1.5 text-slate-300 hover:text-[#F5D77F] font-mono transition-colors"
+            >
+              <Phone className="w-3.5 h-3.5 text-[#F5D77F]" />
+              <span>+91 7887663038</span>
+            </a>
+          </div>
+        </div>
+      </div>
     </footer>
   );
 }
