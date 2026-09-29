@@ -66,12 +66,12 @@ const CATEGORIES = [
 ];
 
 const PRESET_SCHEME_IMAGES = [
-  { name: "घरकुल / पक्के घर (PMAY)", url: "/images/schemes/pmay-gharkul.jpg" },
-  { name: "सौर कृषी पंप व शेततळे", url: "/images/schemes/solar-pump-shettale.jpg" },
-  { name: "शेतकरी सन्मान निधी", url: "/images/schemes/pm-kisan-farmer.jpg" },
-  { name: "महिला बचत गट व लाडकी बहीण", url: "/images/schemes/mahila-bal-kalyan.jpg" },
-  { name: "मनरेगा रोजगार हमी", url: "/images/schemes/mgnrega-rozgar.jpg" },
-  { name: "१५ वा वित्त आयोग पायाभूत विकास", url: "/images/schemes/gram-vikas-infra.jpg" },
+  { name: "घरकुल / पक्के घर (PMAY)", url: "/images/schemes/pmay-gharkul.webp" },
+  { name: "सौर कृषी पंप व शेततळे", url: "/images/schemes/solar-pump-shettale.webp" },
+  { name: "शेतकरी सन्मान निधी", url: "/images/schemes/pm-kisan-farmer.webp" },
+  { name: "महिला बचत गट व लाडकी बहीण", url: "/images/schemes/mahila-bal-kalyan.webp" },
+  { name: "मनरेगा रोजगार हमी", url: "/images/schemes/mgnrega-rozgar.webp" },
+  { name: "१५ वा वित्त आयोग पायाभूत विकास", url: "/images/schemes/gram-vikas-infra.webp" },
 ];
 
 export function SchemeManagerClient({ initialSchemes }: Props) {
@@ -131,7 +131,7 @@ export function SchemeManagerClient({ initialSchemes }: Props) {
         formData.set("existingAttachmentName", editingScheme.attachmentName);
       }
     }
-    formData.set("existingImageUrl", selectedPresetImage || editingScheme?.imageUrl || "/images/schemes/pmay-gharkul.jpg");
+    formData.set("existingImageUrl", selectedPresetImage || editingScheme?.imageUrl || "/images/schemes/pmay-gharkul.webp");
 
     startTransition(async () => {
       const res = await saveScheme(formData);
@@ -273,7 +273,10 @@ export function SchemeManagerClient({ initialSchemes }: Props) {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {filteredSchemes.map((s) => {
-            const imageUrl = s.imageUrl || "/images/schemes/pmay-gharkul.jpg";
+            const rawImageUrl = s.imageUrl || "/images/schemes/pmay-gharkul.webp";
+            const imageUrl = rawImageUrl.startsWith("/images/")
+              ? rawImageUrl.replace(/\.(png|jpg|jpeg)$/i, ".webp")
+              : rawImageUrl;
 
             return (
               <div

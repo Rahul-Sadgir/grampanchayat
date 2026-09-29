@@ -11,7 +11,7 @@ export default function RootLoading() {
           
           <div className="relative w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white shadow-md p-1.5 flex items-center justify-center">
             <Image
-              src="/images/emblem.png"
+              src="/images/emblem.webp"
               alt="महाराष्ट्र शासन बोधचिन्ह"
               width={40}
               height={40}

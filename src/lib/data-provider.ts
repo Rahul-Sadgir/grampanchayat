@@ -15,86 +15,86 @@ export const DEFAULT_VILLAGE_GALLERIES: Record<
 > = {
   gulwanch: [
     {
-      url: "/images/gallery/village-karyalay.jpg",
+      url: "/images/gallery/village-karyalay.webp",
       caption: "ग्रामपंचायत कार्यालय, ई-सेवा व डिजिटल नागरी सुविधा केंद्र",
       category: "प्रशासकीय वास्तू",
     },
     {
-      url: "/images/gallery/village-entrance.jpg",
+      url: "/images/gallery/village-entrance.webp",
       caption: "गुळवंच गाव मुख्य प्रवेश कमान व स्वागत परिसर",
       category: "प्रवेशद्वार व परिसर",
     },
     {
-      url: "/images/gallery/smart-village-street.jpg",
+      url: "/images/gallery/smart-village-street.webp",
       caption: "गावातील अंतर्गत पक्के सिमेंट रस्ते व सौर पथदिवे",
       category: "पायाभूत सुविधा",
     },
     {
-      url: "/images/gallery/village-lake-nature.jpg",
+      url: "/images/gallery/village-lake-nature.webp",
       caption: "जलसंधारण शेततळे, बंधारे व समृद्ध निसर्गरम्य शिवार",
       category: "निसर्ग व शेती",
     },
     {
-      url: "/images/gallery/village-panoramic.png",
+      url: "/images/gallery/village-panoramic.webp",
       caption: "सह्याद्रीच्या कुशीतील निसर्गरम्य गुळवंच गावाचा विहंगम देखावा",
       category: "विहंगम देखावा",
     },
     {
-      url: "/images/gallery/village-heritage.jpg",
+      url: "/images/gallery/village-heritage.webp",
       caption: "वारली कला व पारंपरिक ग्रामीण संस्कृती",
       category: "ऐतिहासिक वारसा",
     },
   ],
   mazagaon: [
     {
-      url: "/images/gallery/historic-chavdi.jpg",
+      url: "/images/gallery/historic-chavdi.webp",
       caption: "माझगाव ऐतिहासिक चावडी, वटवृक्ष व पार कट्टा",
       category: "ऐतिहासिक वारसा",
     },
     {
-      url: "/images/gallery/village-karyalay.jpg",
+      url: "/images/gallery/village-karyalay.webp",
       caption: "माझगाव आदर्श ग्रामपंचायत प्रशासकीय इमारत",
       category: "प्रशासकीय वास्तू",
     },
     {
-      url: "/images/gallery/smart-village-street.jpg",
+      url: "/images/gallery/smart-village-street.webp",
       caption: "स्वच्छ सुंदर गाव अभियान व डांबरी रस्ते",
       category: "पायाभूत सुविधा",
     },
     {
-      url: "/images/gallery/village-lake-nature.jpg",
+      url: "/images/gallery/village-lake-nature.webp",
       caption: "जलयुक्त शिवार बंधारा, कृषी तलाव व विहीर",
       category: "निसर्ग व शेती",
     },
     {
-      url: "/images/gallery/village-panoramic.png",
+      url: "/images/gallery/village-panoramic.webp",
       caption: "माझगाव परिसराचे विहंगम निसर्ग दृश्य",
       category: "विहंगम देखावा",
     },
   ],
   komalwadi: [
     {
-      url: "/images/gallery/village-karyalay.jpg",
+      url: "/images/gallery/village-karyalay.webp",
       caption: "कोमलवाडी ग्रामपंचायत कार्यालय व नागरी सेवा केंद्र",
       category: "प्रशासकीय वास्तू",
     },
     {
-      url: "/images/gallery/smart-village-street.jpg",
+      url: "/images/gallery/smart-village-street.webp",
       caption: "डिजिटल कोमलवाडी - मुख्य रस्ते व सौर ऊर्जा व्यवस्था",
       category: "पायाभूत सुविधा",
     },
     {
-      url: "/images/gallery/village-lake-nature.jpg",
+      url: "/images/gallery/village-lake-nature.webp",
       caption: "पाणीपुरवठा विहीर, शेततळे व समृद्ध शेती शिवार",
       category: "निसर्ग व शेती",
     },
     {
-      url: "/images/gallery/village-panoramic.png",
+      url: "/images/gallery/village-panoramic.webp",
       caption: "कोमलवाडी गाव व निसर्गरम्य परिसर",
       category: "विहंगम देखावा",
     },
     {
-      url: "/images/gallery/village-heritage.jpg",
+      url: "/images/gallery/village-heritage.webp",
       caption: "पारंपरिक लोकजीवन व ग्रामसंस्कृती",
       category: "ऐतिहासिक वारसा",
     },
@@ -114,7 +114,7 @@ export const FALLBACK_VILLAGES = [
     phone: "+91 2551 245120",
     email: "grampanchayat.gulwanch@gmail.com",
     address: "मु. पो. गुळवंच, ता. सिन्नर, जि. नाशिक, महाराष्ट्र - ४२२१०३",
-    coverImage: "/images/gulwanch-banner.jpg",
+    coverImage: "/images/gulwanch-banner.webp",
     galleryImages: DEFAULT_VILLAGE_GALLERIES.gulwanch,
     primaryColor: "#003625",
     secondaryColor: "#9e4300",
@@ -130,7 +130,7 @@ export const FALLBACK_VILLAGES = [
     phone: "+91 2551 245210",
     email: "grampanchayat.mazagaon@gmail.com",
     address: "मु. पो. माझगाव, ता. सिन्नर, जि. नाशिक, महाराष्ट्र - ४२२१०३",
-    coverImage: "/images/mazagaon-banner.jpg",
+    coverImage: "/images/mazagaon-banner.webp",
     galleryImages: DEFAULT_VILLAGE_GALLERIES.mazagaon,
     primaryColor: "#003625",
     secondaryColor: "#9e4300",
@@ -146,7 +146,7 @@ export const FALLBACK_VILLAGES = [
     phone: "9823978492",
     email: "gpkomalwadi@gmail.com",
     address: "मु. कोमलवाडी, पो. वडांगळी, ता. सिन्नर, जि. नाशिक, महाराष्ट्र - ४२२१०३",
-    coverImage: "/images/panoramic-landscape.png",
+    coverImage: "/images/panoramic-landscape.webp",
     galleryImages: DEFAULT_VILLAGE_GALLERIES.komalwadi,
     primaryColor: "#003625",
     secondaryColor: "#9e4300",
@@ -187,7 +187,7 @@ export const FALLBACK_SCHEMES = [
     slug: "pmay-rural-gharkul",
     title: "प्रधानमंत्री आवास योजना (ग्रामीण - PMAY-G)",
     category: "घरकुल व निवारा",
-    imageUrl: "/images/schemes/pmay-gharkul.jpg",
+    imageUrl: "/images/schemes/pmay-gharkul.webp",
     description: "ग्रामीण भागातील बेघर व कच्च्या घरात राहणाऱ्या कुटुंबांना पक्के घर बांधणीसाठी ₹ १.२० लाख थेट अनुदान + मनरेगा ९० दिवसांची मजुरी व स्वच्छ भारत शौचालय अनुदान.",
     subsidyDetails: "₹ १.२० लाख थेट बँक खात्यात + ₹ २३,८५० मनरेगा मजुरी + ₹ १२,००० शौचालय अनुदान (एकूण ₹ १.५५ लाख)",
     targetAudience: "ग्रामीण भागातील बेघर, कच्च्या मातीच्या/कुडाच्या घरात राहणारे व आर्थिकदृष्ट्या दुर्बल घटक (BPL/SECC/Awaas+)",
@@ -219,7 +219,7 @@ export const FALLBACK_SCHEMES = [
     slug: "magel-tyala-solar-pump-shettale",
     title: "मागेल त्याला सौर कृषी पंप व शेततळे योजना (PM Kusum & Shettale)",
     category: "कृषी व जलसंधारण",
-    imageUrl: "/images/schemes/solar-pump-shettale.jpg",
+    imageUrl: "/images/schemes/solar-pump-shettale.webp",
     description: "शेतकऱ्यांना शाश्वत सिंचनासाठी सौर कृषी पंप बसविण्यासाठी ९०% ते ९५% शासकीय अनुदान तसेच शेततळे खोदण्यासाठी व प्लास्टिक अस्तरीकरणासाठी थेट आर्थिक मदत.",
     subsidyDetails: "सौर पंपासाठी ९०% ते ९५% पर्यंत शासकीय अनुदान (शेतकऱ्याला फक्त ५% ते १०% वाटा) + शेततळे अस्तरीकरणासाठी ₹ ७५,०००",
     targetAudience: "अल्प व अत्यल्प भूधारक शेतकरी, पारंपरिक वीज जोडणी नसलेले शेतकरी व लोडशेडिंगने त्रस्त शेतकरी",
@@ -251,7 +251,7 @@ export const FALLBACK_SCHEMES = [
     slug: "pm-kisan-namo-shetkari-sanman",
     title: "पीएम किसान व नमो शेतकरी महासन्मान निधी योजना",
     category: "शेतकरी कल्याण",
-    imageUrl: "/images/schemes/pm-kisan-farmer.jpg",
+    imageUrl: "/images/schemes/pm-kisan-farmer.webp",
     description: "शेतकऱ्यांसाठी पीक निविष्ठा खर्च भागवण्यासाठी केंद्र व राज्य शासनातर्फे एकत्रित वार्षिक ₹ १२,००० थेट बँक खात्यात सन्मान निधी.",
     subsidyDetails: "वार्षिक ₹ १२,००० थेट बँक खात्यात (केंद्र ₹ ६,००० + महाराष्ट्र शासन ₹ ६,००० दर चार महिन्यांनी ₹ ४,००० चे ३ समान हप्ते)",
     targetAudience: "महाराष्ट्रातील सर्व अल्प, अत्यल्प व सर्वसाधारण जमीनधारक शेतकरी कुटुंब",
@@ -279,7 +279,7 @@ export const FALLBACK_SCHEMES = [
     slug: "mahatma-phule-karjmukti-yojana",
     title: "महात्मा जोतीराव फुले शेतकरी कर्जमुक्ती योजना",
     category: "शेतकरी कर्जमुक्ती",
-    imageUrl: "/images/schemes/karjmukti-debt-relief.jpg",
+    imageUrl: "/images/schemes/karjmukti-debt-relief.webp",
     description: "शेतकऱ्यांचे ₹ २ लाखांपर्यंतचे थकीत पीक कर्ज थेट माफ तसेच नियमित कर्जफेड करणाऱ्या शेतकऱ्यांना ₹ ५०,००० पर्यंत प्रोत्साहनपर अनुदान.",
     subsidyDetails: "₹ २ लाखांपर्यंत थकीत पीक कर्ज पूर्ण माफी + नियमित कर्जदारांना ₹ ५०,००० पर्यंत प्रोत्साहनपर लाभ",
     targetAudience: "जिल्हा मध्यवर्ती सहकारी बँक (DCCB), राष्ट्रीयीकृत व व्यापारी बँकांकडून पीक कर्ज घेतलेले शेतकरी",
@@ -307,7 +307,7 @@ export const FALLBACK_SCHEMES = [
     slug: "mahila-bal-kalyan-ladki-bahin",
     title: "मुख्यमंत्री माझी लाडकी बहीण व महिला सक्षमीकरण योजना",
     category: "महिला व बालविकास",
-    imageUrl: "/images/schemes/mahila-bal-kalyan.jpg",
+    imageUrl: "/images/schemes/mahila-bal-kalyan.webp",
     description: "महिलांच्या आर्थिक स्वातंत्र्यासाठी व पोषणासाठी दरमहा ₹ १,५०० थेट बँक खात्यात सहाय्य तसेच महिला बचत गटांना स्वावलंबनासाठी अर्थसहाय्य.",
     subsidyDetails: "दरमहा ₹ १,५०० (वार्षिक ₹ १८,०००) थेट पात्र महिलांच्या बँक खात्यात DBT द्वारे जमा",
     targetAudience: "महाराष्ट्रातील २१ ते ६५ वयोगटातील विवाहित, विधवा, घटस्फोटित, परित्यक्ता व निराधार महिला",
@@ -335,7 +335,7 @@ export const FALLBACK_SCHEMES = [
     slug: "shabari-ramai-tribal-gharkul",
     title: "शबरी आदिवासी व रमाई अनुसूचित जाती घरकुल योजना",
     category: "घरकुल व सामाजिक न्याय",
-    imageUrl: "/images/schemes/shabari-tribal-gharkul.jpg",
+    imageUrl: "/images/schemes/shabari-tribal-gharkul.webp",
     description: "अनुसूचित जमाती (ST) व अनुसूचित जाती (SC) प्रवर्गातील बेघर बांधवांसाठी सर्व सोयीसुविधांनी युक्त पक्के घरकुल अनुदान.",
     subsidyDetails: "₹ १.३० लाख ते ₹ २.५० लाख थेट घरकुल बांधकाम अनुदान + मनरेगा मजुरी व शौचालय सहाय्य",
     targetAudience: "अनुसूचित जमाती (ST - शबरी) व अनुसूचित जाती/नवबौद्ध (SC - रमाई) प्रवर्गातील बेघर व कच्च्या घरात राहणारे बांधव",
@@ -363,7 +363,7 @@ export const FALLBACK_SCHEMES = [
     slug: "sanjay-gandhi-niradhar-anudan",
     title: "संजय गांधी निराधार व श्रावणबाळ पेन्शन अनुदान योजना",
     category: "सामाजिक सुरक्षा व पेन्शन",
-    imageUrl: "/images/schemes/sanjay-gandhi-niradhar.jpg",
+    imageUrl: "/images/schemes/sanjay-gandhi-niradhar.webp",
     description: "निराधार वृद्ध, दिव्यांग व्यक्ती, विधवा व दुर्धर आजाराने ग्रस्त नागरिकांसाठी दरमहा थेट सन्मान पेन्शन योजना.",
     subsidyDetails: "दरमहा ₹ १,५०० थेट पेन्शन लाभार्थीच्या बँक खात्यात जमा",
     targetAudience: "६५ वर्षांवरील निराधार वृद्ध, ४०% पेक्षा जास्त अपंगत्व असणारे दिव्यांग, विधवा, घटस्फोटित महिला व अनाथ मुले",
@@ -390,7 +390,7 @@ export const FALLBACK_SCHEMES = [
     slug: "jal-jeevan-mission-har-ghar-jal",
     title: "जल जीवन मिशन - हर घर नल से जल योजना",
     category: "पाणीपुरवठा व स्वच्छता",
-    imageUrl: "/images/schemes/jal-jeevan-mission.jpg",
+    imageUrl: "/images/schemes/jal-jeevan-mission.webp",
     description: "प्रत्येक ग्रामीण कुटुंबाला घरबसल्या शुद्ध, सुरक्षित व मुबलक पिण्याच्या पाण्यासाठी मोफत कार्यान्वित नळ जोडणी (FHTC).",
     subsidyDetails: "प्रत्येक ग्रामीण घराला मोफत नळ जोडणी + शुद्धीकरण पाणीपुरवठा सुविधा",
     targetAudience: "गावातील सर्व नागरिक, वाड्या, वस्त्या, जिल्हा परिषद शाळा व अंगणवाड्या",
@@ -418,7 +418,7 @@ export const FALLBACK_SCHEMES = [
     slug: "mgnrega-rozgar-hami-yojana",
     title: "महात्मा गांधी राष्ट्रीय ग्रामीण रोजगार हमी योजना (MGNREGA)",
     category: "रोजगार व हमी",
-    imageUrl: "/images/schemes/mgnrega-rozgar.jpg",
+    imageUrl: "/images/schemes/mgnrega-rozgar.webp",
     description: "ग्रामीण भागातील अकुशल मजुरी करू इच्छिणाऱ्या प्रौढ व्यक्तींना एका वर्षात किमान १०० दिवसांच्या रोजगाराची कायदेशीर हमी.",
     subsidyDetails: "किमान १०० दिवसांच्या रोजगाराची कायदेशीर हमी + प्रतिदिन विहित शासकीय मजुरी दर थेट बँक खात्यात",
     targetAudience: "गावातील १८ वर्षांवरील अकुशल शारीरिक श्रम करण्यास इच्छुक सर्व नागरिक",
@@ -446,7 +446,7 @@ export const FALLBACK_SCHEMES = [
     slug: "gopinath-munde-shetkari-vima",
     title: "गोपीनाथ मुंडे शेतकरी अपघात सुरक्षा सानुग्रह अनुदान योजना",
     category: "शेतकरी सामाजिक सुरक्षा",
-    imageUrl: "/images/schemes/gopinath-munde-vima.jpg",
+    imageUrl: "/images/schemes/gopinath-munde-vima.webp",
     description: "अपघाती मृत्यू किंवा कायमचे अपंगत्व आल्यास खातेदार शेतकऱ्याच्या वारसास ₹ २ लाखांपर्यंतचे थेट आर्थिक सहाय्य.",
     subsidyDetails: "अपघाती मृत्यू किंवा २ अवयव निकामी झाल्यास ₹ २ लाख, १ डोळा/हात/पाय निकामी झाल्यास ₹ १ लाख",
     targetAudience: "महाराष्ट्रातील १० ते ७५ वयोगटातील सर्व खातेदार शेतकरी व त्यांच्या कुटुंबातील सदस्य",
@@ -473,7 +473,7 @@ export const FALLBACK_SCHEMES = [
     slug: "smart-village-sundar-gaav",
     title: "स्मार्ट ग्राम व आर. आर. (आबा) पाटील सुंदर गाव योजना",
     category: "ग्रामविकास व गौरव पुरस्कार",
-    imageUrl: "/images/schemes/smart-village-swachhata.jpg",
+    imageUrl: "/images/schemes/smart-village-swachhata.webp",
     description: "स्वच्छता, पर्यावरण संवर्धन, १००% कर वसुली व डिजिटल ई-प्रशासनात उत्कृष्ट कामगिरी करणाऱ्या गावांना विशेष विकास पारितोषिक.",
     subsidyDetails: "तालुका स्तरावर ₹ १० लाख, जिल्हा स्तरावर ₹ २० लाख ते विभाग स्तरावर ₹ ४० लाखांचे विकास पारितोषिक",
     targetAudience: "गावातील सर्व ग्रामस्थ, महिला बचत गट, युवक व ग्रामपंचायत प्रशासन",
@@ -500,7 +500,7 @@ export const FALLBACK_SCHEMES = [
     slug: "15th-finance-commission-gram-vikas",
     title: "१५ वा वित्त आयोग - आदर्श ग्रामविकास व पायाभूत सुविधा",
     category: "ग्रामविकास व पायाभूत",
-    imageUrl: "/images/schemes/gram-vikas-infra.jpg",
+    imageUrl: "/images/schemes/gram-vikas-infra.webp",
     description: "केंद्राच्या १५ व्या वित्त आयोगांतर्गत ५०% अबंध (Untied) व ५०% बंधीत (Tied) निधीतून गावातील पायाभूत विकासकामे व स्वच्छ भारत उपक्रम.",
     subsidyDetails: "केंद्राकडून ग्रामपंचायतीला थेट ५०% बंधित (Tied) व ५०% अबंध (Untied) विकास निधी",
     targetAudience: "गावातील सर्व नागरिक, वॉर्ड व सार्वजनिक पायाभूत सुविधा",
@@ -585,6 +585,20 @@ export async function getVillageBySlug(slug: string) {
     if (!villageData.galleryImages || villageData.galleryImages.length === 0) {
       villageData.galleryImages = defaultGallery;
     }
+    if (villageData.coverImage && villageData.coverImage.startsWith("/images/")) {
+      villageData.coverImage = villageData.coverImage.replace(/\.(png|jpg|jpeg)$/i, ".webp");
+    }
+    if (Array.isArray(villageData.galleryImages)) {
+      villageData.galleryImages = villageData.galleryImages.map((g: any) => {
+        if (typeof g === "string" && g.startsWith("/images/")) {
+          return g.replace(/\.(png|jpg|jpeg)$/i, ".webp");
+        }
+        if (g && typeof g.url === "string" && g.url.startsWith("/images/")) {
+          return { ...g, url: g.url.replace(/\.(png|jpg|jpeg)$/i, ".webp") };
+        }
+        return g;
+      });
+    }
   }
 
   return villageData;
@@ -611,12 +625,25 @@ export async function getAllVillages() {
   return villagesList.map((v) => {
     const defaultGallery =
       DEFAULT_VILLAGE_GALLERIES[v.slug] || DEFAULT_VILLAGE_GALLERIES.komalwadi;
+    const normalizedCover = v.coverImage && v.coverImage.startsWith("/images/")
+      ? v.coverImage.replace(/\.(png|jpg|jpeg)$/i, ".webp")
+      : v.coverImage;
+    const rawGallery = v.galleryImages && v.galleryImages.length > 0 ? v.galleryImages : defaultGallery;
+    const normalizedGallery = Array.isArray(rawGallery)
+      ? rawGallery.map((g: any) => {
+          if (typeof g === "string" && g.startsWith("/images/")) {
+            return g.replace(/\.(png|jpg|jpeg)$/i, ".webp");
+          }
+          if (g && typeof g.url === "string" && g.url.startsWith("/images/")) {
+            return { ...g, url: g.url.replace(/\.(png|jpg|jpeg)$/i, ".webp") };
+          }
+          return g;
+        })
+      : rawGallery;
     return {
       ...v,
-      galleryImages:
-        v.galleryImages && v.galleryImages.length > 0
-          ? v.galleryImages
-          : defaultGallery,
+      coverImage: normalizedCover,
+      galleryImages: normalizedGallery,
     };
   });
 }
@@ -718,45 +745,48 @@ export async function getVillageNotices(villageId?: any, limit = 10, villageSlug
 }
 
 export function resolveSchemeImage(scheme: any): string {
-  if (scheme.imageUrl && scheme.imageUrl.trim().length > 0 && scheme.imageUrl !== "/images/hero-bg.jpg") {
+  if (scheme.imageUrl && scheme.imageUrl.trim().length > 0 && scheme.imageUrl !== "/images/hero-bg.webp" && scheme.imageUrl !== "/images/hero-bg.jpg") {
+    if (scheme.imageUrl.startsWith("/images/")) {
+      return scheme.imageUrl.replace(/\.(png|jpg|jpeg)$/i, ".webp");
+    }
     return scheme.imageUrl;
   }
   const text = `${scheme.title || ""} ${scheme.category || ""} ${scheme.description || ""} ${scheme.slug || ""}`.toLowerCase();
 
   if (text.includes("कर्जमुक्ती") || text.includes("karjmukti") || text.includes("पीक कर्ज") || text.includes("फुले")) {
-    return "/images/schemes/karjmukti-debt-relief.jpg";
+    return "/images/schemes/karjmukti-debt-relief.webp";
   }
   if (text.includes("शबरी") || text.includes("रमाई") || text.includes("shabari") || text.includes("आदिवासी घरकुल")) {
-    return "/images/schemes/shabari-tribal-gharkul.jpg";
+    return "/images/schemes/shabari-tribal-gharkul.webp";
   }
   if (text.includes("संजय गांधी") || text.includes("निराधार") || text.includes("श्रावणबाळ") || text.includes("पेन्शन") || text.includes("niradhar")) {
-    return "/images/schemes/sanjay-gandhi-niradhar.jpg";
+    return "/images/schemes/sanjay-gandhi-niradhar.webp";
   }
   if (text.includes("जल जीवन") || text.includes("नल से जल") || text.includes("jal jeevan") || text.includes("पिण्याचे पाणी") || text.includes("नळ जोडणी")) {
-    return "/images/schemes/jal-jeevan-mission.jpg";
+    return "/images/schemes/jal-jeevan-mission.webp";
   }
   if (text.includes("गोपीनाथ मुंडे") || text.includes("अपघात") || text.includes("विमा") || text.includes("सुरक्षा सानुग्रह") || text.includes("gopinath")) {
-    return "/images/schemes/gopinath-munde-vima.jpg";
+    return "/images/schemes/gopinath-munde-vima.webp";
   }
   if (text.includes("स्मार्ट ग्राम") || text.includes("सुंदर गाव") || text.includes("smart village") || text.includes("आर. आर.")) {
-    return "/images/schemes/smart-village-swachhata.jpg";
+    return "/images/schemes/smart-village-swachhata.webp";
   }
   if (text.includes("लाडकी बहीण") || text.includes("महिला") || text.includes("बचत गट") || text.includes("कन्या") || text.includes("बाल")) {
-    return "/images/schemes/mahila-bal-kalyan.jpg";
+    return "/images/schemes/mahila-bal-kalyan.webp";
   }
   if (text.includes("शेततळे") || text.includes("सौर") || text.includes("पंप") || text.includes("kusum") || text.includes("सिंचन") || text.includes("कृषी व जल")) {
-    return "/images/schemes/solar-pump-shettale.jpg";
+    return "/images/schemes/solar-pump-shettale.webp";
   }
   if (text.includes("पीएम किसान") || text.includes("नमो शेतकरी") || text.includes("kisan") || text.includes("कृषी सन्मान")) {
-    return "/images/schemes/pm-kisan-farmer.jpg";
+    return "/images/schemes/pm-kisan-farmer.webp";
   }
   if (text.includes("रोजगार") || text.includes("मनरेगा") || text.includes("mgnrega") || text.includes("मजुरी") || text.includes("काम")) {
-    return "/images/schemes/mgnrega-rozgar.jpg";
+    return "/images/schemes/mgnrega-rozgar.webp";
   }
   if (text.includes("घरकुल") || text.includes("आवास") || text.includes("pmay") || text.includes("housing")) {
-    return "/images/schemes/pmay-gharkul.jpg";
+    return "/images/schemes/pmay-gharkul.webp";
   }
-  return "/images/schemes/gram-vikas-infra.jpg";
+  return "/images/schemes/gram-vikas-infra.webp";
 }
 
 function normalizeScheme(scheme: any) {

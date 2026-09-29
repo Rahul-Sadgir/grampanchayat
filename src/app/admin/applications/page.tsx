@@ -14,6 +14,8 @@ import {
   MessageSquare,
 } from "lucide-react";
 
+import { getAllVillages } from "@/lib/data-provider";
+
 interface Props {
   searchParams: Promise<{ village?: string; status?: string; q?: string }>;
 }
@@ -22,9 +24,9 @@ export const dynamic = "force-dynamic";
 
 export default async function AdminApplicationsPage({ searchParams }: Props) {
   const { village: villageSlug, status, q } = await searchParams;
-  await connectDB();
+  const conn = await connectDB();
 
-  const villages = await Village.find().sort({ name: 1 }).lean();
+  const villages = await getAllVillages();
 
   let query: any = {};
 
@@ -47,11 +49,18 @@ export default async function AdminApplicationsPage({ searchParams }: Props) {
     ];
   }
 
-  const applications = await Application.find(query)
-    .populate("villageId", "name slug")
-    .populate("serviceId", "name")
-    .sort({ submittedAt: -1 })
-    .lean();
+  let applications: any[] = [];
+  if (conn) {
+    try {
+      applications = await Application.find(query)
+        .populate("villageId", "name slug")
+        .populate("serviceId", "name")
+        .sort({ submittedAt: -1 })
+        .lean();
+    } catch (e) {
+      console.warn("[AdminApplications] Failed to query applications:", e);
+    }
+  }
 
   return (
     <div className="space-y-6">

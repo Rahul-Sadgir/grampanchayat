@@ -17,8 +17,8 @@ export default async function AdminVillagesPage() {
     phone: v.phone,
     email: v.email,
     address: v.address,
-    coverImage: v.coverImage || "/images/panoramic-landscape.png",
-    galleryImages: v.galleryImages || [],
+    coverImage: (v.coverImage ? v.coverImage.replace(/\.(png|jpg|jpeg)$/i, ".webp") : "/images/panoramic-landscape.webp"),
+    galleryImages: (v.galleryImages || []).map((img: string) => img.replace(/\.(png|jpg|jpeg)$/i, ".webp")),
   }));
 
   return (

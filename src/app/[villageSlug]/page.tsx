@@ -113,7 +113,7 @@ export default async function VillageHomePage({ params }: Props) {
         slug={village.slug}
         taluka={taluka}
         district={district}
-        coverImage={village.coverImage || "/images/panoramic-landscape.png"}
+        coverImage={village.coverImage || "/images/panoramic-landscape.webp"}
       />
 
       {/* 02 — QUICK SEARCH & RECOMMENDATION CHIPS CARD */}
@@ -235,7 +235,7 @@ export default async function VillageHomePage({ params }: Props) {
               {schemes.slice(0, 4).map((s: any) => {
                 const schemeSlug = s.slug || s._id.toString();
                 const detailUrl = `/${village.slug}/schemes/${schemeSlug}`;
-                const imageUrl = s.imageUrl || "/images/schemes/pmay-gharkul.jpg";
+                const imageUrl = s.imageUrl || "/images/schemes/pmay-gharkul.webp";
 
                 return (
                   <Link
@@ -319,7 +319,7 @@ export default async function VillageHomePage({ params }: Props) {
             <div className="lg:col-span-5 relative group">
               <div className="overflow-hidden rounded-2xl shadow-sm border border-[#E5DEC9] aspect-4/3 relative bg-white">
                 <Image
-                  src={village.coverImage || "/images/panoramic-landscape.png"}
+                  src={village.coverImage || "/images/panoramic-landscape.webp"}
                   alt={`${village.name} गाव देखावा`}
                   fill
                   className="object-cover transform group-hover:scale-105 transition-transform duration-500"
@@ -673,7 +673,7 @@ export default async function VillageHomePage({ params }: Props) {
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
             <div className="h-36 sm:h-44 rounded-2xl overflow-hidden shadow-xs relative group bg-white border border-[#E5DEC9]">
               <Image
-                src="/images/panoramic-landscape.png"
+                src="/images/panoramic-landscape.webp"
                 alt="ग्रामदैवत उत्सव देखावा"
                 fill
                 className="object-cover group-hover:scale-105 transition-transform duration-500"
@@ -685,7 +685,7 @@ export default async function VillageHomePage({ params }: Props) {
 
             <div className="h-36 sm:h-44 rounded-2xl overflow-hidden shadow-xs relative group bg-white border border-[#E5DEC9]">
               <Image
-                src={village.coverImage || "/images/panoramic-landscape.png"}
+                src={village.coverImage || "/images/panoramic-landscape.webp"}
                 alt="ग्रामपंचायत भवन"
                 fill
                 className="object-cover group-hover:scale-105 transition-transform duration-500"
@@ -697,7 +697,7 @@ export default async function VillageHomePage({ params }: Props) {
 
             <div className="h-36 sm:h-44 rounded-2xl overflow-hidden shadow-xs relative group bg-white border border-[#E5DEC9]">
               <Image
-                src="/images/panoramic-landscape.png"
+                src="/images/panoramic-landscape.webp"
                 alt="सुजलाम सुफलाम शिवार"
                 fill
                 className="object-cover group-hover:scale-105 transition-transform duration-500"
@@ -709,7 +709,7 @@ export default async function VillageHomePage({ params }: Props) {
 
             <div className="h-36 sm:h-44 rounded-2xl overflow-hidden shadow-xs relative group bg-white border border-[#E5DEC9]">
               <Image
-                src={village.coverImage || "/images/panoramic-landscape.png"}
+                src={village.coverImage || "/images/panoramic-landscape.webp"}
                 alt="जि.प. डिजिटल शाळा"
                 fill
                 className="object-cover group-hover:scale-105 transition-transform duration-500"

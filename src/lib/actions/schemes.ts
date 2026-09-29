@@ -75,7 +75,10 @@ export async function saveScheme(formData: FormData) {
       slug = `scheme-${Date.now()}`;
     }
 
-    let imageUrl = (formData.get("existingImageUrl") as string) || "/images/schemes/pmay-gharkul.jpg";
+    let imageUrl = (formData.get("existingImageUrl") as string) || "/images/schemes/pmay-gharkul.webp";
+    if (imageUrl.startsWith("/images/")) {
+      imageUrl = imageUrl.replace(/\.(png|jpg|jpeg)$/i, ".webp");
+    }
     if (imageFile && imageFile.size > 0 && typeof imageFile.arrayBuffer === "function") {
       const buffer = Buffer.from(await imageFile.arrayBuffer());
       const uploadRes = await uploadFileBuffer(buffer, {

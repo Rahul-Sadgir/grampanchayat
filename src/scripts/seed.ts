@@ -122,7 +122,7 @@ async function seed() {
     phone: "+91 2551 245120",
     email: "grampanchayat.gulwanch@gmail.com",
     address: "मु. पो. गुळवंच, ता. सिन्नर, जि. नाशिक, महाराष्ट्र - ४२२१०३",
-    coverImage: "/images/gulwanch-banner.jpg",
+    coverImage: "/images/gulwanch-banner.webp",
     primaryColor: "#047857",
     secondaryColor: "#d97706",
   };
@@ -237,7 +237,7 @@ async function seed() {
     phone: "+91 2551 245210",
     email: "grampanchayat.mazagaon@gmail.com",
     address: "मु. पो. माझगाव, ता. सिन्नर, जि. नाशिक, महाराष्ट्र - ४२२१०३",
-    coverImage: "/images/mazagaon-banner.jpg",
+    coverImage: "/images/mazagaon-banner.webp",
     primaryColor: "#1e3a8a",
     secondaryColor: "#0284c7",
   };

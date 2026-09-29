@@ -29,17 +29,17 @@ interface Props {
 const PRESET_BANNERS = [
   {
     name: "गुळवंच निसर्गरम्य व डिजिटल ग्रामपंचायत (१६:९)",
-    url: "/images/gulwanch-banner.jpg",
+    url: "/images/gulwanch-banner.webp",
     desc: "पारंपरिक कमान, सौर ऊर्जा इमारत व हिरवेगार शेत परिसर",
   },
   {
     name: "माझगाव आदर्श ग्रामपंचायत (१६:९)",
-    url: "/images/mazagaon-banner.jpg",
+    url: "/images/mazagaon-banner.webp",
     desc: "ऐतिहासिक चावडी, वटवृक्ष व आधुनिक ग्रामपंचायत सेवा केंद्र",
   },
   {
     name: "आधुनिक ई-प्रशासन केंद्र (१६:९)",
-    url: "/images/village-hero-banner.jpg",
+    url: "/images/village-hero-banner.webp",
     desc: "डिजिटल भारत ग्रामीण विकास केंद्र",
   },
 ];
@@ -48,8 +48,9 @@ export function VillageBannerManager({ villages }: Props) {
   const [selectedVillageId, setSelectedVillageId] = useState<string>(
     villages[0]?._id || ""
   );
+  const initialCover = villages[0]?.coverImage || "/images/gulwanch-banner.webp";
   const [previewUrl, setPreviewUrl] = useState<string>(
-    villages[0]?.coverImage || "/images/gulwanch-banner.jpg"
+    initialCover.startsWith("/images/") ? initialCover.replace(/\.(png|jpg|jpeg)$/i, ".webp") : initialCover
   );
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [directUrl, setDirectUrl] = useState<string>("");

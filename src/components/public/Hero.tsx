@@ -15,15 +15,19 @@ export function Hero({
   slug,
   taluka,
   district,
-  coverImage = "/images/village-hero-banner.jpg",
+  coverImage = "/images/village-hero-banner.webp",
 }: HeroProps) {
+  const normalizedCoverImage = coverImage.startsWith("/images/")
+    ? coverImage.replace(/\.(png|jpg|jpeg)$/i, ".webp")
+    : coverImage;
+
   return (
     <div className="space-y-4 px-3 sm:px-4 pt-1 sm:pt-4 max-w-5xl mx-auto">
       {/* 16:9 ASPECT RATIO HERO CONTAINER (Matching Stitch UI Editorial Style) */}
       <section className="relative w-full aspect-[16/9] overflow-hidden rounded-2xl sm:rounded-3xl shadow-lg border border-[#E5DEC9] flex flex-col justify-between text-white bg-[#003625] group">
         {/* Full 16:9 Background Image */}
         <Image
-          src={coverImage}
+          src={normalizedCoverImage}
           alt={`${villageName} ग्रामपंचायत १६:९ निसर्ग देखावा`}
           fill
           priority

@@ -66,7 +66,10 @@ export default async function SchemesPage({ params }: Props) {
         {schemes.map((s: any) => {
           const schemeSlug = s.slug || s._id.toString();
           const detailUrl = `/${villageSlug}/schemes/${schemeSlug}`;
-          const imageUrl = s.imageUrl || "/images/schemes/pmay-gharkul.jpg";
+          const rawImageUrl = s.imageUrl || "/images/schemes/pmay-gharkul.webp";
+          const imageUrl = rawImageUrl.startsWith("/images/")
+            ? rawImageUrl.replace(/\.(png|jpg|jpeg)$/i, ".webp")
+            : rawImageUrl;
 
           return (
             <div

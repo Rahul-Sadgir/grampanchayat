@@ -146,7 +146,7 @@ export function Header({ village }: HeaderProps) {
           <Link href={`/${village.slug}`} className="flex items-center gap-2.5 sm:gap-3 group min-w-0">
             <div className="relative h-10 w-10 sm:h-12 sm:w-12 shrink-0 group-hover:scale-105 transition-transform flex items-center justify-center">
               <Image
-                src="/images/emblem.png"
+                src="/images/emblem.webp"
                 alt="महाराष्ट्र शासन ग्रामपंचायत अधिकृत बोधचिन्ह"
                 width={48}
                 height={48}

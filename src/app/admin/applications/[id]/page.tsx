@@ -31,12 +31,19 @@ export const dynamic = "force-dynamic";
 
 export default async function ApplicationDetailPage({ params }: Props) {
   const { id } = await params;
-  await connectDB();
+  const conn = await connectDB();
 
-  const app = await Application.findById(id)
-    .populate("villageId", "name slug")
-    .populate("serviceId", "name slug")
-    .lean();
+  let app: any = null;
+  if (conn) {
+    try {
+      app = await Application.findById(id)
+        .populate("villageId", "name slug")
+        .populate("serviceId", "name slug")
+        .lean();
+    } catch (e) {
+      console.warn("[ApplicationDetailPage] Error finding application:", e);
+    }
+  }
 
   if (!app) notFound();
 
@@ -166,16 +173,17 @@ export default async function ApplicationDetailPage({ params }: Props) {
             ) : (
               Object.entries(app.formData || {}).map(([key, val]) => {
                 if (typeof val === "object" && val !== null && "url" in val) {
+                  const fileVal = val as { url: string; fileName?: string };
                   return (
                     <div key={key} className="flex justify-between border-b border-slate-200/60 pb-1.5 last:border-b-0">
                       <span className="text-slate-500 font-medium capitalize">{key}:</span>
                       <a
-                        href={val.url}
+                        href={fileVal.url}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="font-bold text-emerald-700 hover:underline inline-flex items-center gap-1"
                       >
-                        <span>{val.fileName || "कागदपत्र पहा"}</span>
+                        <span>{fileVal.fileName || "कागदपत्र पहा"}</span>
                         <ExternalLink className="w-3 h-3" />
                       </a>
                     </div>

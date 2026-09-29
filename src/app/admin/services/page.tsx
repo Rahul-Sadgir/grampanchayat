@@ -1,26 +1,44 @@
 import { connectDB } from "@/lib/mongodb";
 import { Service } from "@/models/Service";
-import { Village } from "@/models/Village";
+import { getAllVillages, FALLBACK_SERVICES } from "@/lib/data-provider";
 import { ServiceManagerClient } from "@/components/admin/ServiceManagerClient";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminServicesPage() {
-  await connectDB();
+  const conn = await connectDB();
+  const villages = await getAllVillages();
 
-  let villages = await Village.find().select("name slug").lean();
-  if (villages.length === 0) {
-    villages = [
-      { _id: "1", name: "कोमलवाडी", slug: "komalwadi" },
-      { _id: "2", name: "गुळवंच", slug: "gulwanch" },
-      { _id: "3", name: "माझगाव", slug: "mazagaon" },
-    ] as any[];
+  let services: any[] = [];
+  if (conn) {
+    try {
+      services = await Service.find()
+        .populate("villageId", "name slug")
+        .sort({ order: 1, createdAt: -1 })
+        .lean();
+    } catch (e) {
+      console.warn("[AdminServicesPage] DB query failed, using fallback:", e);
+    }
   }
 
-  const services = await Service.find()
-    .populate("villageId", "name slug")
-    .sort({ order: 1, createdAt: -1 })
-    .lean();
+  if (services.length === 0) {
+    services = FALLBACK_SERVICES.map((s) => ({
+      _id: s.slug,
+      name: s.name,
+      slug: s.slug,
+      description: s.description || "",
+      category: s.category || "दाखले",
+      tabCategory: "aarz",
+      icon: s.icon || "FileText",
+      fileUrl: "",
+      fileName: "",
+      isPdfOnly: false,
+      order: 1,
+      isActive: true,
+      villageSlug: "komalwadi",
+      villageName: "कोमलवाडी",
+    }));
+  }
 
   const formattedServices = services.map((s: any) => ({
     _id: s._id.toString(),

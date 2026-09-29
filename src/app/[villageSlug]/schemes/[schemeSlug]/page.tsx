@@ -56,7 +56,10 @@ export default async function SchemeDetailPage({ params }: Props) {
     (s: any) => s.slug !== scheme.slug && s._id.toString() !== scheme._id.toString()
   ).slice(0, 3);
 
-  const heroImage = scheme.imageUrl || "/images/schemes/pmay-gharkul.jpg";
+  const rawHeroImage = scheme.imageUrl || "/images/schemes/pmay-gharkul.webp";
+  const heroImage = rawHeroImage.startsWith("/images/")
+    ? rawHeroImage.replace(/\.(png|jpg|jpeg)$/i, ".webp")
+    : rawHeroImage;
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-6 sm:py-10 space-y-8">
@@ -304,7 +307,11 @@ export default async function SchemeDetailPage({ params }: Props) {
                 <div>
                   <div className="relative w-full aspect-video bg-slate-100 overflow-hidden">
                     <Image
-                      src={rel.imageUrl || "/images/schemes/pmay-gharkul.jpg"}
+                      src={
+                        (rel.imageUrl || "/images/schemes/pmay-gharkul.webp").startsWith("/images/")
+                          ? (rel.imageUrl || "/images/schemes/pmay-gharkul.webp").replace(/\.(png|jpg|jpeg)$/i, ".webp")
+                          : (rel.imageUrl || "/images/schemes/pmay-gharkul.webp")
+                      }
                       alt={rel.title}
                       fill
                       className="object-cover group-hover:scale-105 transition duration-300"

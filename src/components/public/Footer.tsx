@@ -41,7 +41,7 @@ export function Footer({ village }: FooterProps) {
             <div className="hidden md:block space-y-3">
               <div className="flex items-center gap-2.5">
                 <Image
-                  src="/images/emblem.png"
+                  src="/images/emblem.webp"
                   alt="महाराष्ट्र शासन ग्रामपंचायत अधिकृत बोधचिन्ह"
                   width={36}
                   height={36}
@@ -173,7 +173,7 @@ export function Footer({ village }: FooterProps) {
             <div className="space-y-3">
               <div className="flex items-center gap-2">
                 <Image
-                  src="/images/emblem.png"
+                  src="/images/emblem.webp"
                   alt="महाराष्ट्र शासन ग्रामपंचायत अधिकृत बोधचिन्ह"
                   width={24}
                   height={24}

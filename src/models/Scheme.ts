@@ -45,7 +45,7 @@ const SchemeSchema = new Schema<IScheme>(
     title: { type: String, required: true },
     description: { type: String, required: true },
     category: { type: String, required: true },
-    imageUrl: { type: String, default: "/images/schemes/pmay-gharkul.jpg" },
+    imageUrl: { type: String, default: "/images/schemes/pmay-gharkul.webp" },
     benefits: [{ type: String }],
     subsidyDetails: { type: String },
     targetAudience: { type: String },

@@ -24,6 +24,8 @@ import {
   Send,
 } from "lucide-react";
 
+import { getAllVillages, FALLBACK_SERVICES, FALLBACK_SCHEMES, FALLBACK_NOTICES } from "@/lib/data-provider";
+
 interface Props {
   searchParams: Promise<{ village?: string }>;
 }
@@ -32,9 +34,9 @@ export const dynamic = "force-dynamic";
 
 export default async function AdminDashboardPage({ searchParams }: Props) {
   const { village: selectedVillageSlug } = await searchParams;
-  await connectDB();
+  const conn = await connectDB();
 
-  const villages = await Village.find().sort({ name: 1 }).lean();
+  const villages = await getAllVillages();
 
   let targetVillageId: any = null;
   let activeVillageName = "सर्व गावे (All Villages)";
@@ -47,49 +49,73 @@ export default async function AdminDashboardPage({ searchParams }: Props) {
     }
   }
 
-  const appFilter = targetVillageId ? { villageId: targetVillageId } : {};
-  const noticeFilter = targetVillageId ? { villageId: targetVillageId } : {};
-  const schemeFilter = {}; // Schemes are common across all villages
-  const projectFilter = targetVillageId ? { villageId: targetVillageId } : {};
-  const repFilter = targetVillageId
-    ? { $or: [{ villageId: targetVillageId }, { villageSlug: selectedVillageSlug }] }
-    : {};
-  const serviceFilter = targetVillageId
-    ? { $or: [{ villageId: targetVillageId }, { villageSlug: selectedVillageSlug }] }
-    : {};
+  let totalApps = 0;
+  let pendingApps = 0;
+  let approvedApps = 0;
+  let totalReps = 0;
+  let totalServices = 0;
+  let totalNotices = 0;
+  let totalSchemes = 0;
+  let totalProjects = 0;
+  let recentApplications: any[] = [];
 
-  const [
-    totalApps,
-    pendingApps,
-    approvedApps,
-    totalReps,
-    totalServices,
-    totalNotices,
-    totalSchemes,
-    totalProjects,
-    recentApplications,
-  ] = await Promise.all([
-    Application.countDocuments(appFilter),
-    Application.countDocuments({
-      ...appFilter,
-      status: { $in: ["SUBMITTED", "UNDER_REVIEW"] },
-    }),
-    Application.countDocuments({
-      ...appFilter,
-      status: { $in: ["APPROVED", "COMPLETED"] },
-    }),
-    Representative.countDocuments(repFilter),
-    Service.countDocuments(serviceFilter),
-    Notice.countDocuments(noticeFilter),
-    Scheme.countDocuments(schemeFilter),
-    Project.countDocuments(projectFilter),
-    Application.find(appFilter)
-      .populate("villageId", "name slug")
-      .populate("serviceId", "name")
-      .sort({ submittedAt: -1 })
-      .limit(6)
-      .lean(),
-  ]);
+  if (conn) {
+    try {
+      const appFilter = targetVillageId ? { villageId: targetVillageId } : {};
+      const noticeFilter = targetVillageId ? { villageId: targetVillageId } : {};
+      const schemeFilter = {}; // Schemes are common across all villages
+      const projectFilter = targetVillageId ? { villageId: targetVillageId } : {};
+      const repFilter = targetVillageId
+        ? { $or: [{ villageId: targetVillageId }, { villageSlug: selectedVillageSlug }] }
+        : {};
+      const serviceFilter = targetVillageId
+        ? { $or: [{ villageId: targetVillageId }, { villageSlug: selectedVillageSlug }] }
+        : {};
+
+      [
+        totalApps,
+        pendingApps,
+        approvedApps,
+        totalReps,
+        totalServices,
+        totalNotices,
+        totalSchemes,
+        totalProjects,
+        recentApplications,
+      ] = await Promise.all([
+        Application.countDocuments(appFilter),
+        Application.countDocuments({
+          ...appFilter,
+          status: { $in: ["SUBMITTED", "UNDER_REVIEW"] },
+        }),
+        Application.countDocuments({
+          ...appFilter,
+          status: { $in: ["APPROVED", "COMPLETED"] },
+        }),
+        Representative.countDocuments(repFilter),
+        Service.countDocuments(serviceFilter),
+        Notice.countDocuments(noticeFilter),
+        Scheme.countDocuments(schemeFilter),
+        Project.countDocuments(projectFilter),
+        Application.find(appFilter)
+          .populate("villageId", "name slug")
+          .populate("serviceId", "name")
+          .sort({ submittedAt: -1 })
+          .limit(6)
+          .lean(),
+      ]);
+    } catch (err) {
+      console.warn("[Dashboard] Database queries failed (using fallbacks):", err);
+      totalServices = FALLBACK_SERVICES?.length || 10;
+      totalSchemes = FALLBACK_SCHEMES?.length || 12;
+      totalNotices = FALLBACK_NOTICES?.length || 4;
+    }
+  } else {
+    // Sensible fallback metrics when MongoDB Atlas is connecting or offline
+    totalServices = FALLBACK_SERVICES?.length || 10;
+    totalSchemes = FALLBACK_SCHEMES?.length || 12;
+    totalNotices = FALLBACK_NOTICES?.length || 4;
+  }
 
   return (
     <div className="space-y-6 sm:space-y-8">

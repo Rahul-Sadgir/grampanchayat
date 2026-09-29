@@ -11,7 +11,7 @@ export default function VillageLoading() {
           
           <div className="relative w-11 h-11 rounded-full bg-white shadow-md p-1.5 flex items-center justify-center">
             <Image
-              src="/images/emblem.png"
+              src="/images/emblem.webp"
               alt="महाराष्ट्र शासन"
               width={36}
               height={36}

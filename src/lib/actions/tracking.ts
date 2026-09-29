@@ -10,28 +10,36 @@ export async function trackCitizenApplication(applicationNumber: string, mobileN
     return { success: false, error: "कृपया अर्ज क्रमांक आणि मोबाईल नंबर दोन्ही प्रविष्ट करा." };
   }
 
-  await connectDB();
+  try {
+    const conn = await connectDB();
+    if (!conn) {
+      return { success: false, error: "डेटाबेस सर्व्हरशी संपर्क होऊ शकला नाही. कृपया थोड्या वेळाने प्रयत्न करा." };
+    }
 
-  const application = await Application.findOne({
-    applicationNumber: applicationNumber.trim().toUpperCase(),
-    mobileNumber: mobileNumber.trim(),
-  }).populate("serviceId", "name").populate("villageId", "name");
+    const application = await Application.findOne({
+      applicationNumber: applicationNumber.trim().toUpperCase(),
+      mobileNumber: mobileNumber.trim(),
+    }).populate("serviceId", "name").populate("villageId", "name");
 
-  if (!application) {
-    return { success: false, error: "नोंद सापडली नाही. कृपया अर्ज क्रमांक आणि मोबाईल नंबर तपासा." };
+    if (!application) {
+      return { success: false, error: "नोंद सापडली नाही. कृपया अर्ज क्रमांक आणि मोबाईल नंबर तपासा." };
+    }
+
+    return {
+      success: true,
+      data: {
+        applicationNumber: application.applicationNumber,
+        applicantName: application.applicantName,
+        serviceName: (application.serviceId as any)?.name || "शासकीय सेवा",
+        villageName: (application.villageId as any)?.name || "ग्रामपंचायत",
+        status: application.status,
+        submittedAt: application.submittedAt.toISOString(),
+        adminNotes: application.adminNotes || null,
+        formData: application.formData,
+      },
+    };
+  } catch (err) {
+    console.error("[trackCitizenApplication] Error:", err);
+    return { success: false, error: "अर्ज शोधताना तांत्रिक त्रुटी आली. कृपया नंतर प्रयत्न करा." };
   }
-
-  return {
-    success: true,
-    data: {
-      applicationNumber: application.applicationNumber,
-      applicantName: application.applicantName,
-      serviceName: (application.serviceId as any)?.name || "शासकीय सेवा",
-      villageName: (application.villageId as any)?.name || "ग्रामपंचायत",
-      status: application.status,
-      submittedAt: application.submittedAt.toISOString(),
-      adminNotes: application.adminNotes || null,
-      formData: application.formData,
-    },
-  };
 }

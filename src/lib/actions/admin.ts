@@ -15,18 +15,26 @@ export async function updateApplicationStatus(
   newStatus: string,
   adminNotes?: string
 ) {
-  await connectDB();
+  try {
+    const conn = await connectDB();
+    if (!conn) {
+      return { success: false, error: "डेटाबेस सर्व्हरशी संपर्क होऊ शकला नाही." };
+    }
 
-  await Application.findByIdAndUpdate(applicationId, {
-    status: newStatus,
-    adminNotes: adminNotes ?? undefined,
-    completedAt: newStatus === "COMPLETED" ? new Date() : undefined,
-  });
+    await Application.findByIdAndUpdate(applicationId, {
+      status: newStatus,
+      adminNotes: adminNotes ?? undefined,
+      completedAt: newStatus === "COMPLETED" ? new Date() : undefined,
+    });
 
-  revalidatePath("/admin/applications");
-  revalidatePath(`/admin/applications/${applicationId}`);
-  revalidatePath("/admin/dashboard");
-  return { success: true };
+    revalidatePath("/admin/applications");
+    revalidatePath(`/admin/applications/${applicationId}`);
+    revalidatePath("/admin/dashboard");
+    return { success: true };
+  } catch (err: any) {
+    console.error("[updateApplicationStatus] Error:", err);
+    return { success: false, error: err.message || "स्थिती अद्यतनित करताना त्रुटी आली." };
+  }
 }
 
 export interface SendResponseResult {

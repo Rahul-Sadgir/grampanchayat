@@ -24,7 +24,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <Link href="/admin/dashboard" className="flex items-center gap-2.5">
               <div className="relative w-9 h-9 rounded-xl bg-white/10 p-1 flex items-center justify-center shrink-0 border border-emerald-800">
                 <Image
-                  src="/images/emblem.png"
+                  src="/images/emblem.webp"
                   alt="महाराष्ट्र शासन ग्रामपंचायत बोधचिन्ह"
                   width={32}
                   height={32}

@@ -140,7 +140,11 @@ export function VillageManagerClient({ villages }: Props) {
                 {/* 16:9 Banner Header */}
                 <div className="relative w-full aspect-[16/9] bg-slate-100 border-b border-slate-100">
                   <Image
-                    src={v.coverImage || "/images/panoramic-landscape.png"}
+                    src={
+                      (v.coverImage || "/images/panoramic-landscape.webp").startsWith("/images/")
+                        ? (v.coverImage || "/images/panoramic-landscape.webp").replace(/\.(png|jpg|jpeg)$/i, ".webp")
+                        : (v.coverImage || "/images/panoramic-landscape.webp")
+                    }
                     alt={v.name}
                     fill
                     className="object-cover"

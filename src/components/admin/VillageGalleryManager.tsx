@@ -38,37 +38,37 @@ interface Props {
 
 const PRESET_GALLERY_IMAGES = [
   {
-    url: "/images/gallery/village-karyalay.jpg",
+    url: "/images/gallery/village-karyalay.webp",
     caption: "ग्रामपंचायत कार्यालय व ई-सेवा केंद्र",
     category: "प्रशासकीय वास्तू",
   },
   {
-    url: "/images/gallery/village-entrance.jpg",
+    url: "/images/gallery/village-entrance.webp",
     caption: "गाव मुख्य प्रवेश कमान व स्वागत फलक",
     category: "प्रवेशद्वार व परिसर",
   },
   {
-    url: "/images/gallery/smart-village-street.jpg",
+    url: "/images/gallery/smart-village-street.webp",
     caption: "गावातील पक्के रस्ते व सौर पथदिवे",
     category: "पायाभूत सुविधा",
   },
   {
-    url: "/images/gallery/village-lake-nature.jpg",
+    url: "/images/gallery/village-lake-nature.webp",
     caption: "जलसंधारण शेततळे, बंधारे व समृद्ध शेती शिवार",
     category: "निसर्ग व शेती",
   },
   {
-    url: "/images/gallery/village-panoramic.png",
+    url: "/images/gallery/village-panoramic.webp",
     caption: "गावाचा निसर्गरम्य विहंगम देखावा",
     category: "विहंगम देखावा",
   },
   {
-    url: "/images/gallery/historic-chavdi.jpg",
+    url: "/images/gallery/historic-chavdi.webp",
     caption: "ऐतिहासिक चावडी व वटवृक्ष पार कट्टा",
     category: "ऐतिहासिक वारसा",
   },
   {
-    url: "/images/gallery/village-heritage.jpg",
+    url: "/images/gallery/village-heritage.webp",
     caption: "वारली कला व पारंपरिक ग्रामीण संस्कृती",
     category: "ऐतिहासिक वारसा",
   },

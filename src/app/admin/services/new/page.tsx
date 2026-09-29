@@ -1,12 +1,10 @@
-import { connectDB } from "@/lib/mongodb";
-import { Village } from "@/models/Village";
+import { getAllVillages } from "@/lib/data-provider";
 import { NewServiceFormClient } from "./NewServiceFormClient";
 
 export const dynamic = "force-dynamic";
 
 export default async function NewServicePage() {
-  await connectDB();
-  const villagesRaw = await Village.find().sort({ name: 1 }).lean();
+  const villagesRaw = await getAllVillages();
   
   const villages = villagesRaw.map((v: any) => ({
     _id: v._id.toString(),
