@@ -64,7 +64,7 @@ export default async function RootGatewayPage() {
         </div>
 
         {/* Village Selection Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 pt-2">
+        <div className={`grid grid-cols-1 ${villages.length > 1 ? "sm:grid-cols-2" : "max-w-xl mx-auto"} gap-4 sm:gap-6 pt-2`}>
           {villages.map((v: any) => (
             <Link
               key={v._id.toString()}

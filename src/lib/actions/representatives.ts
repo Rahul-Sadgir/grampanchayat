@@ -97,7 +97,7 @@ export async function saveRepresentative(formData: FormData): Promise<SaveRepres
     await connectDB();
 
     const id = formData.get("id") as string | null;
-    const villageSlug = (formData.get("villageSlug") as string) || "gulwanch";
+    const villageSlug = (formData.get("villageSlug") as string) || "komalwadi";
     const name = (formData.get("name") as string)?.trim();
     const role = (formData.get("role") as string)?.trim();
     const phone = (formData.get("phone") as string)?.trim() || "";

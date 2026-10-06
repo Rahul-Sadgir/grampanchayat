@@ -1,13 +1,21 @@
 import { getAllVillages } from "@/lib/data-provider";
 import { getNoticesAdmin } from "@/lib/actions/notices";
 import { NoticeManagerClient } from "@/components/admin/NoticeManagerClient";
+import { getAdminSession } from "@/lib/auth";
+import { redirect } from "next/navigation";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminNoticesPage() {
+  const session = await getAdminSession();
+  if (!session) {
+    redirect("/admin/login");
+  }
+
+  const villageSlug = session.villageSlug || "komalwadi";
   const [villages, notices] = await Promise.all([
     getAllVillages(),
-    getNoticesAdmin("ALL"),
+    getNoticesAdmin(villageSlug),
   ]);
 
   return (
@@ -17,6 +25,7 @@ export default async function AdminNoticesPage() {
         name: v.name,
         slug: v.slug,
       }))}
+      selectedVillageSlug={villageSlug}
     />
   );
 }

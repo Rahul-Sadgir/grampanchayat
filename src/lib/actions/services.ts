@@ -218,7 +218,7 @@ export async function createCustomServiceAction(formData: FormData) {
     const fieldsJson = formData.get("fieldsJson") as string;
 
     const village = await Village.findById(villageId).lean();
-    const villageSlug = village ? village.slug : "gulwanch";
+    const villageSlug = village ? village.slug : "komalwadi";
 
     let fields = [];
     try {

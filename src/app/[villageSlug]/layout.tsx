@@ -8,8 +8,6 @@ export const revalidate = 300;
 
 export async function generateStaticParams() {
   return [
-    { villageSlug: "gulwanch" },
-    { villageSlug: "mazagaon" },
     { villageSlug: "komalwadi" },
   ];
 }

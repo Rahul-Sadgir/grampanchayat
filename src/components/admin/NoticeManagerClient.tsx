@@ -16,6 +16,7 @@ import {
   Flame,
   FileText,
   Search,
+  Building2,
   RefreshCw,
 } from "lucide-react";
 import {
@@ -40,6 +41,7 @@ interface NoticeItem {
 interface Props {
   initialNotices: NoticeItem[];
   villages: { name: string; slug: string }[];
+  selectedVillageSlug?: string;
 }
 
 const NOTICE_CATEGORIES = [
@@ -52,16 +54,17 @@ const NOTICE_CATEGORIES = [
   "कार्यक्रम व उत्सव",
 ];
 
-export function NoticeManagerClient({ initialNotices, villages }: Props) {
+export function NoticeManagerClient({ initialNotices, villages, selectedVillageSlug }: Props) {
+  const defaultVillage = selectedVillageSlug || villages[0]?.slug || "komalwadi";
   const [notices, setNotices] = useState<NoticeItem[]>(initialNotices);
-  const [selectedVillage, setSelectedVillage] = useState<string>("ALL");
+  const [selectedVillage, setSelectedVillage] = useState<string>(defaultVillage);
   const [searchQuery, setSearchQuery] = useState("");
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingNotice, setEditingNotice] = useState<NoticeItem | null>(null);
 
   // Form State
-  const [villageSlug, setVillageSlug] = useState(villages[0]?.slug || "komalwadi");
+  const [villageSlug, setVillageSlug] = useState(defaultVillage);
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [category, setCategory] = useState(NOTICE_CATEGORIES[0]);
@@ -79,7 +82,7 @@ export function NoticeManagerClient({ initialNotices, villages }: Props) {
 
   const openAddModal = () => {
     setEditingNotice(null);
-    setVillageSlug(selectedVillage === "ALL" ? villages[0]?.slug || "komalwadi" : selectedVillage);
+    setVillageSlug(defaultVillage);
     setTitle("");
     setContent("");
     setCategory(NOTICE_CATEGORIES[0]);
@@ -276,36 +279,15 @@ export function NoticeManagerClient({ initialNotices, villages }: Props) {
           />
         </div>
 
-        {/* Village Tabs */}
-        <div className="flex items-center gap-1.5 overflow-x-auto w-full md:w-auto pb-1 md:pb-0">
+        {/* Village Jurisdiction Badge */}
+        <div className="flex items-center gap-1.5 w-full md:w-auto">
           <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider shrink-0 mr-1">
-            गाव:
+            अधिकार क्षेत्र:
           </span>
-          <button
-            type="button"
-            onClick={() => setSelectedVillage("ALL")}
-            className={`px-3 py-1 rounded-xl text-xs font-bold transition shrink-0 ${
-              selectedVillage === "ALL"
-                ? "bg-emerald-800 text-white shadow-xs"
-                : "bg-slate-100 hover:bg-slate-200 text-slate-700"
-            }`}
-          >
-            सर्व ({notices.length})
-          </button>
-          {villages.map((v) => (
-            <button
-              key={v.slug}
-              type="button"
-              onClick={() => setSelectedVillage(v.slug)}
-              className={`px-3 py-1 rounded-xl text-xs font-bold transition shrink-0 ${
-                selectedVillage === v.slug
-                  ? "bg-emerald-800 text-white shadow-xs"
-                  : "bg-slate-100 hover:bg-slate-200 text-slate-700"
-              }`}
-            >
-              {v.name}
-            </button>
-          ))}
+          <span className="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-emerald-800 text-white shadow-xs flex items-center gap-1.5">
+            <Building2 className="w-3.5 h-3.5 text-emerald-300" />
+            <span>{villages.find((v) => v.slug === defaultVillage)?.name || "कोमलवाडी"} ग्रामपंचायत</span>
+          </span>
         </div>
       </div>
 
@@ -472,19 +454,12 @@ export function NoticeManagerClient({ initialNotices, villages }: Props) {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block font-bold text-slate-700 mb-1">
-                    गाव निवडा *
+                    ग्रामपंचायत अधिकार क्षेत्र
                   </label>
-                  <select
-                    value={villageSlug}
-                    onChange={(e) => setVillageSlug(e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs font-semibold focus:ring-2 focus:ring-emerald-600 focus:outline-none bg-white"
-                  >
-                    {villages.map((v) => (
-                      <option key={v.slug} value={v.slug}>
-                        {v.name}
-                      </option>
-                    ))}
-                  </select>
+                  <div className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                    <Building2 className="w-3.5 h-3.5 text-emerald-700 shrink-0" />
+                    <span>{villages.find((v) => v.slug === defaultVillage)?.name || "कोमलवाडी"} ग्रामपंचायत</span>
+                  </div>
                 </div>
 
                 <div>

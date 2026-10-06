@@ -83,20 +83,20 @@ export function VillageManagerClient({ villages }: Props) {
               <Building2 className="w-5 h-5" />
             </span>
             <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900">
-              ग्रामपंचायत पोर्टल व १६:९ बॅनर नियंत्रण
+              ग्रामपंचायत प्रोफाइल व १६:९ कव्हर बॅनर
             </h2>
           </div>
           <p className="text-xs text-slate-500 mt-1 flex items-center gap-1.5">
             <ShieldCheck className="w-3.5 h-3.5 text-emerald-700" />
             <span>
-              प्रत्येक गाव ही स्वतंत्र अधिकृत वेबसाइट आहे. ॲडमिन येथून संपर्क माहिती व १६:९ कव्हर बॅनर नियंत्रित करू शकतात.
+              एक प्रशासक = एकच गाव लॉगिन. आपल्या अधिकृत ग्रामपंचायतीची संपर्क माहिती, छायाचित्रे व १६:९ कव्हर बॅनर येथून व्यवस्थापित करा.
             </span>
           </p>
         </div>
 
         <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-2xl bg-slate-100 text-slate-700 text-xs font-bold border border-slate-200">
           <Globe className="w-3.5 h-3.5 text-emerald-700" />
-          <span>सक्रिय ग्रामपंचायत पोर्टल्स: {villages.length}</span>
+          <span>अधिकृत गाव: {villages[0]?.name || "कोमलवाडी"}</span>
         </div>
       </div>
 
@@ -127,7 +127,7 @@ export function VillageManagerClient({ villages }: Props) {
       {/* Configured Villages Cards Grid */}
       <div className="space-y-4">
         <h3 className="text-base font-extrabold text-slate-900 flex items-center gap-2">
-          <span>अधिकृत ग्रामपंचायतींची यादी ({villages.length})</span>
+          <span>ग्रामपंचायत अधिकृत तपशील</span>
         </h3>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">

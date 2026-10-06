@@ -4,8 +4,9 @@ export interface IUser extends Document {
   name: string;
   email: string;
   passwordHash: string;
-  role: "SUPER_ADMIN" | "VILLAGE_ADMIN" | "CONTENT_EDITOR";
-  assignedVillages: mongoose.Types.ObjectId[];
+  role: "VILLAGE_ADMIN" | "SUPER_ADMIN" | "CONTENT_EDITOR";
+  villageId: mongoose.Types.ObjectId;
+  villageSlug: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -17,10 +18,11 @@ const UserSchema = new Schema<IUser>(
     passwordHash: { type: String, required: true },
     role: {
       type: String,
-      enum: ["SUPER_ADMIN", "VILLAGE_ADMIN", "CONTENT_EDITOR"],
+      enum: ["VILLAGE_ADMIN", "SUPER_ADMIN", "CONTENT_EDITOR"],
       default: "VILLAGE_ADMIN",
     },
-    assignedVillages: [{ type: Schema.Types.ObjectId, ref: "Village" }],
+    villageId: { type: Schema.Types.ObjectId, ref: "Village", required: true },
+    villageSlug: { type: String, required: true, default: "komalwadi" },
   },
   { timestamps: true }
 );

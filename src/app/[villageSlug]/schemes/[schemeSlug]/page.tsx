@@ -28,7 +28,7 @@ interface Props {
 export const revalidate = 300;
 
 export async function generateStaticParams() {
-  const villages = ["gulwanch", "mazagaon", "komalwadi"];
+  const villages = ["komalwadi"];
   const schemes = await getVillageSchemes(undefined, 30);
   const params: Array<{ villageSlug: string; schemeSlug: string }> = [];
 

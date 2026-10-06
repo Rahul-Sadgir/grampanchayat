@@ -13,65 +13,6 @@ export const DEFAULT_VILLAGE_GALLERIES: Record<
   string,
   Array<{ url: string; caption: string; category: string }>
 > = {
-  gulwanch: [
-    {
-      url: "/images/gallery/village-karyalay.webp",
-      caption: "ग्रामपंचायत कार्यालय, ई-सेवा व डिजिटल नागरी सुविधा केंद्र",
-      category: "प्रशासकीय वास्तू",
-    },
-    {
-      url: "/images/gallery/village-entrance.webp",
-      caption: "गुळवंच गाव मुख्य प्रवेश कमान व स्वागत परिसर",
-      category: "प्रवेशद्वार व परिसर",
-    },
-    {
-      url: "/images/gallery/smart-village-street.webp",
-      caption: "गावातील अंतर्गत पक्के सिमेंट रस्ते व सौर पथदिवे",
-      category: "पायाभूत सुविधा",
-    },
-    {
-      url: "/images/gallery/village-lake-nature.webp",
-      caption: "जलसंधारण शेततळे, बंधारे व समृद्ध निसर्गरम्य शिवार",
-      category: "निसर्ग व शेती",
-    },
-    {
-      url: "/images/gallery/village-panoramic.webp",
-      caption: "सह्याद्रीच्या कुशीतील निसर्गरम्य गुळवंच गावाचा विहंगम देखावा",
-      category: "विहंगम देखावा",
-    },
-    {
-      url: "/images/gallery/village-heritage.webp",
-      caption: "वारली कला व पारंपरिक ग्रामीण संस्कृती",
-      category: "ऐतिहासिक वारसा",
-    },
-  ],
-  mazagaon: [
-    {
-      url: "/images/gallery/historic-chavdi.webp",
-      caption: "माझगाव ऐतिहासिक चावडी, वटवृक्ष व पार कट्टा",
-      category: "ऐतिहासिक वारसा",
-    },
-    {
-      url: "/images/gallery/village-karyalay.webp",
-      caption: "माझगाव आदर्श ग्रामपंचायत प्रशासकीय इमारत",
-      category: "प्रशासकीय वास्तू",
-    },
-    {
-      url: "/images/gallery/smart-village-street.webp",
-      caption: "स्वच्छ सुंदर गाव अभियान व डांबरी रस्ते",
-      category: "पायाभूत सुविधा",
-    },
-    {
-      url: "/images/gallery/village-lake-nature.webp",
-      caption: "जलयुक्त शिवार बंधारा, कृषी तलाव व विहीर",
-      category: "निसर्ग व शेती",
-    },
-    {
-      url: "/images/gallery/village-panoramic.webp",
-      caption: "माझगाव परिसराचे विहंगम निसर्ग दृश्य",
-      category: "विहंगम देखावा",
-    },
-  ],
   komalwadi: [
     {
       url: "/images/gallery/village-karyalay.webp",
@@ -103,38 +44,6 @@ export const DEFAULT_VILLAGE_GALLERIES: Record<
 
 // ==================== DEFAULT OFFLINE / RESILIENT FALLBACK DATA ====================
 export const FALLBACK_VILLAGES = [
-  {
-    _id: "65f000000000000000000001",
-    name: "गुळवंच",
-    slug: "gulwanch",
-    taluka: "सिन्नर",
-    district: "नाशिक",
-    state: "महाराष्ट्र",
-    description: "सिन्नर तालुक्यातील प्रगतशील, डिजिटल आणि आदर्श ग्रामपंचायत गुळवंच. लोकसहभाग आणि पारदर्शक कारभारातून समृद्ध गावाची निर्मिती.",
-    phone: "+91 2551 245120",
-    email: "grampanchayat.gulwanch@gmail.com",
-    address: "मु. पो. गुळवंच, ता. सिन्नर, जि. नाशिक, महाराष्ट्र - ४२२१०३",
-    coverImage: "/images/gulwanch-banner.webp",
-    galleryImages: DEFAULT_VILLAGE_GALLERIES.gulwanch,
-    primaryColor: "#003625",
-    secondaryColor: "#9e4300",
-  },
-  {
-    _id: "65f000000000000000000002",
-    name: "माझगाव",
-    slug: "mazagaon",
-    taluka: "सिन्नर",
-    district: "नाशिक",
-    state: "महाराष्ट्र",
-    description: "सिन्नर तालुक्यातील स्वावलंबी, निसर्गरम्य आणि तंत्रस्नेही ग्रामपंचायत माझगाव. गावच्या सर्वांगीण विकासासाठी कटिबद्ध ग्रामप्रशासन.",
-    phone: "+91 2551 245210",
-    email: "grampanchayat.mazagaon@gmail.com",
-    address: "मु. पो. माझगाव, ता. सिन्नर, जि. नाशिक, महाराष्ट्र - ४२२१०३",
-    coverImage: "/images/mazagaon-banner.webp",
-    galleryImages: DEFAULT_VILLAGE_GALLERIES.mazagaon,
-    primaryColor: "#003625",
-    secondaryColor: "#9e4300",
-  },
   {
     _id: "65f000000000000000000003",
     name: "कोमलवाडी",
@@ -1031,93 +940,6 @@ export const VILLAGE_DETAILS: Record<
         category: "पाणीपुरवठा",
         description:
           "गावातील प्रत्येक कुटुंबाला शुद्ध पिण्याच्या पाण्यासाठी अंतर्गत पाईपलाईन व जलकुंभ नूतनीकरणाचे काम ९५% पूर्ण.",
-      },
-    ],
-  },
-  gulwanch: {
-    stats: {
-      population: "३,२४०+",
-      households: "६८०",
-      literacyRate: "७८.५%",
-      area: "१२.४ चौ.कि.मी.",
-      schools: "०४ केंद्रे",
-      distanceFromTaluka: "१४ कि.मी. (सिन्नर)",
-      distanceFromDistrict: "३६ कि.मी. (नाशिक)",
-    },
-    representatives: [
-      { role: "सरपंच", name: "मा. सरपंच साहेब", phone: "+91 2551 245120", isSarpanch: true },
-      { role: "उपसरपंच", name: "मा. उपसरपंच", isUpasarpanch: true },
-      { role: "ग्रामपंचायत सदस्य", name: "मा. सदस्य", ward: "वार्ड क्र. १" },
-      { role: "ग्रामपंचायत सदस्य", name: "मा. सदस्य", ward: "वार्ड क्र. २" },
-      { role: "ग्रामपंचायत सदस्य", name: "मा. सदस्य", ward: "वार्ड क्र. ३" },
-      { role: "ग्रामविकास अधिकारी", name: "मा. ग्रामसेवक / VDO", phone: "+91 2551 245120", isOfficer: true },
-    ],
-    visionPoints: [
-      "पारदर्शक लोकशाही कारभार व ऑनलाइन ई-सेवा कक्ष.",
-      "शाश्वत शेती विकास व जलयुक्त शिवार अभियान.",
-      "दर्जेदार प्राथमिक शिक्षण व डिजिटल स्मार्ट शाळा.",
-    ],
-    initiatives: [
-      {
-        title: "गुळवंच मध्ये भव्य मोफत आरोग्य तपासणी व नेत्रचिकित्सा शिबिर",
-        date: "१२ ऑक्टोबर २०२६",
-        category: "आरोग्य शिबिर",
-        description: "जिल्हा सामान्य रुग्णालय नाशिक व ग्रामपंचायत गुळवंच यांच्या संयुक्त विद्यमाने ३५०+ ग्रामस्थांची तपासणी.",
-      },
-      {
-        title: "गावातील मुख्य रस्त्याचे काँक्रिटीकरण व २५ नवीन सौर पथदिवे लोकार्पण",
-        date: "०५ ऑक्टोबर २०२६",
-        category: "विकास कार्य",
-        description: "ग्रामविकास निधी अंतर्गत अंतर्गत रस्त्यांचे काम पूर्ण होऊन रात्रीच्या सुरक्षिततेसाठी सौर दिवे कार्यान्वित.",
-      },
-      {
-        title: "आगामी छत्रपती शिवाजी महाराज जयंती उत्सव व व्याख्यानमाला नियोजन",
-        date: "२८ सप्टेंबर २०२६",
-        category: "सांस्कृतिक",
-        description: "गावातील युवक मंडळे आणि ग्रामपंचायतीच्या संयुक्त विद्यमाने भव्य सांस्कृतिक व्याख्यानमाला.",
-      },
-    ],
-  },
-  mazagaon: {
-    stats: {
-      population: "२,८५०+",
-      households: "५४०",
-      literacyRate: "८०.२%",
-      area: "१०.२ चौ.कि.मी.",
-      schools: "०३ केंद्रे",
-      distanceFromTaluka: "१६ कि.मी. (सिन्नर)",
-      distanceFromDistrict: "३८ कि.मी. (नाशिक)",
-    },
-    representatives: [
-      { role: "सरपंच", name: "मा. सरपंच साहेब", phone: "+91 2551 245210", isSarpanch: true },
-      { role: "उपसरपंच", name: "मा. उपसरपंच", isUpasarpanch: true },
-      { role: "ग्रामपंचायत सदस्य", name: "मा. सदस्य", ward: "वार्ड क्र. १" },
-      { role: "ग्रामपंचायत सदस्य", name: "मा. सदस्य", ward: "वार्ड क्र. २" },
-      { role: "ग्रामपंचायत सदस्य", name: "मा. सदस्य", ward: "वार्ड क्र. ३" },
-      { role: "ग्रामविकास अधिकारी", name: "मा. ग्रामसेवक / VDO", phone: "+91 2551 245210", isOfficer: true },
-    ],
-    visionPoints: [
-      "माझगाव ग्रामविकासाची आधुनिक लोकशाही प्रणाली व पारदर्शक डिजिटल सेवा केंद्र.",
-      "शेतकरी समृद्धी, जलसंधारण आणि सौर ऊर्जा प्रकल्प.",
-    ],
-    initiatives: [
-      {
-        title: "माझगाव मध्ये कृषी यांत्रिकीकरण कार्यशाळा व मार्गदर्शन शिबिर",
-        date: "१० ऑक्टोबर २०२६",
-        category: "कृषी कार्यशाळा",
-        description: "शेतकऱ्यांना आधुनिक ठिबक सिंचन व सौर कृषी पंपाबाबत तज्ज्ञांचे मार्गदर्शन.",
-      },
-      {
-        title: "प्राथमिक आरोग्य उपकेंद्रात मोफत लसीकरण व महिला तपासणी",
-        date: "०२ ऑक्टोबर २०२६",
-        category: "आरोग्य मोहीम",
-        description: "बालके व गरोदर मातांसाठी नियमित आरोग्य तपासणी मोहीम यशस्वीपणे संपन्न.",
-      },
-      {
-        title: "गावात वृक्षारोपण मोहीम व जलसंधारण बंधारे दुरुस्ती",
-        date: "२५ सप्टेंबर २०२६",
-        category: "पर्यावरण",
-        description: "लोकसहभागातून ५०० वृक्षांचे रोपण व जलयुक्त शिवार बंधारे स्वच्छता.",
       },
     ],
   },

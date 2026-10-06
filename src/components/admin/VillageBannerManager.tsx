@@ -20,6 +20,8 @@ interface VillageItem {
   name: string;
   slug: string;
   coverImage?: string;
+  taluka?: string;
+  district?: string;
 }
 
 interface Props {
@@ -28,14 +30,9 @@ interface Props {
 
 const PRESET_BANNERS = [
   {
-    name: "गुळवंच निसर्गरम्य व डिजिटल ग्रामपंचायत (१६:९)",
-    url: "/images/gulwanch-banner.webp",
-    desc: "पारंपरिक कमान, सौर ऊर्जा इमारत व हिरवेगार शेत परिसर",
-  },
-  {
-    name: "माझगाव आदर्श ग्रामपंचायत (१६:९)",
-    url: "/images/mazagaon-banner.webp",
-    desc: "ऐतिहासिक चावडी, वटवृक्ष व आधुनिक ग्रामपंचायत सेवा केंद्र",
+    name: "कोमलवाडी निसर्गरम्य व डिजिटल ग्रामपंचायत (१६:९)",
+    url: "/images/panoramic-landscape.webp",
+    desc: "सह्याद्रीच्या कुशीतील निसर्गरम्य गाव परिसर व डिजिटल ग्रामपंचायत",
   },
   {
     name: "आधुनिक ई-प्रशासन केंद्र (१६:९)",
@@ -48,7 +45,7 @@ export function VillageBannerManager({ villages }: Props) {
   const [selectedVillageId, setSelectedVillageId] = useState<string>(
     villages[0]?._id || ""
   );
-  const initialCover = villages[0]?.coverImage || "/images/gulwanch-banner.webp";
+  const initialCover = villages[0]?.coverImage || "/images/panoramic-landscape.webp";
   const [previewUrl, setPreviewUrl] = useState<string>(
     initialCover.startsWith("/images/") ? initialCover.replace(/\.(png|jpg|jpeg)$/i, ".webp") : initialCover
   );
@@ -408,7 +405,7 @@ export function VillageBannerManager({ villages }: Props) {
                       {currentVillage?.name || "गाव"} ग्रामपंचायत
                     </h4>
                     <p className="text-[8px] sm:text-xs text-emerald-300 font-medium">
-                      ता. {currentVillage?.slug === "gulwanch" ? "सिन्नर" : "सिन्नर"}, जि. नाशिक
+                      ता. {currentVillage?.taluka || "सिन्नर"}, जि. {currentVillage?.district || "नाशिक"}
                     </p>
                   </div>
                 </div>

@@ -312,6 +312,16 @@ export function Header({ village }: HeaderProps) {
                 );
               })}
 
+              {/* Admin Login Link in Drawer */}
+              <Link
+                href="/admin"
+                onClick={() => setDrawerOpen(false)}
+                className="flex items-center gap-3 p-2.5 rounded-xl transition-all bg-[#003625]/5 hover:bg-[#003625]/10 text-[#003625] font-bold mt-2 border border-[#003625]/10"
+              >
+                <Lock className="w-4 h-4 text-[#9e4300]" />
+                <span>प्रशासकीय लॉगिन (Admin)</span>
+              </Link>
+
               {/* Emergency Helpline Box at bottom of drawer */}
               <div className="mt-4 p-3.5 rounded-xl bg-[#F4EFE6] border border-[#E5DEC9] space-y-1">
                 <p className="text-xs font-bold text-[#003625]">आपत्कालीन संपर्क (Helpline)</p>

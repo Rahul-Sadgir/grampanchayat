@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { createCustomServiceAction } from "@/lib/actions/services";
-import { Plus, Trash2, ArrowLeft } from "lucide-react";
+import { Plus, Trash2, ArrowLeft, Building2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
@@ -67,20 +67,13 @@ export function NewServiceFormClient({ villages }: Props) {
         <form onSubmit={handleFormSubmit} className="space-y-4 text-xs">
           <div>
             <label className="block font-bold text-slate-700 mb-1.5">
-              कोणत्या गावासाठी ही सेवा आहे? *
+              ग्रामपंचायत अधिकार क्षेत्र
             </label>
-            <select
-              name="villageId"
-              required
-              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-emerald-600 focus:outline-none bg-white font-medium text-xs"
-            >
-              <option value="">गाव निवडा</option>
-              {villages.map((v) => (
-                <option key={v._id} value={v._id}>
-                  {v.name} ग्रामपंचायत (/{v.slug})
-                </option>
-              ))}
-            </select>
+            <div className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-xs font-bold text-slate-800 flex items-center gap-1.5">
+              <Building2 className="w-3.5 h-3.5 text-emerald-700 shrink-0" />
+              <span>{villages[0]?.name || "कोमलवाडी"} ग्रामपंचायत (एकल गाव लॉगिन)</span>
+            </div>
+            <input type="hidden" name="villageId" value={villages[0]?._id} />
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">

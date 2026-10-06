@@ -16,6 +16,7 @@ import {
   AlertCircle,
   X,
   Building,
+  Building2,
   RefreshCw,
 } from "lucide-react";
 import {
@@ -57,19 +58,22 @@ const ROLES = [
 export function RepresentativeManagerClient({
   initialRepresentatives,
   villages,
-  selectedVillageSlug = "ALL",
+  selectedVillageSlug = "komalwadi",
 }: Props) {
+  const defaultVillage =
+    selectedVillageSlug && selectedVillageSlug !== "ALL"
+      ? selectedVillageSlug
+      : villages[0]?.slug || "komalwadi";
+
   const [reps, setReps] = useState<RepresentativeItem[]>(initialRepresentatives);
-  const [activeVillage, setActiveVillage] = useState(selectedVillageSlug);
+  const [activeVillage, setActiveVillage] = useState(defaultVillage);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingRep, setEditingRep] = useState<RepresentativeItem | null>(null);
 
   // Form State
   const [name, setName] = useState("");
   const [role, setRole] = useState(ROLES[0]);
-  const [villageSlug, setVillageSlug] = useState(
-    villages[0]?.slug || "gulwanch"
-  );
+  const [villageSlug, setVillageSlug] = useState(defaultVillage);
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [ward, setWard] = useState("");
@@ -89,7 +93,7 @@ export function RepresentativeManagerClient({
     setEditingRep(null);
     setName("");
     setRole(ROLES[0]);
-    setVillageSlug(activeVillage === "ALL" ? villages[0]?.slug || "gulwanch" : activeVillage);
+    setVillageSlug(defaultVillage);
     setPhone("");
     setEmail("");
     setWard("");
@@ -232,39 +236,20 @@ export function RepresentativeManagerClient({
         </div>
       )}
 
-      {/* Village Filter Tabs */}
-      <div className="bg-white p-4 rounded-3xl border border-slate-200 shadow-xs flex items-center gap-2 overflow-x-auto">
-        <span className="text-xs font-bold text-slate-400 uppercase tracking-wider shrink-0 mr-1">
-          गाव:
+      {/* Village Jurisdiction Badge (Single Village Admin) */}
+      <div className="bg-white p-4 rounded-3xl border border-slate-200 shadow-xs flex items-center justify-between flex-wrap gap-2">
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+            अधिकार क्षेत्र:
+          </span>
+          <span className="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-emerald-800 text-white shadow-xs flex items-center gap-1.5">
+            <Building2 className="w-3.5 h-3.5 text-emerald-300" />
+            <span>{villages.find((v) => v.slug === defaultVillage)?.name || "कोमलवाडी"} ग्रामपंचायत</span>
+          </span>
+        </div>
+        <span className="text-xs font-bold text-slate-500">
+          एकूण पदाधिकारी व सदस्य: {filteredReps.length}
         </span>
-        <button
-          type="button"
-          onClick={() => setActiveVillage("ALL")}
-          className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition shrink-0 ${
-            activeVillage === "ALL"
-              ? "bg-emerald-800 text-white shadow-xs"
-              : "bg-slate-100 hover:bg-slate-200 text-slate-700"
-          }`}
-        >
-          सर्व गावे ({reps.length})
-        </button>
-        {villages.map((v) => {
-          const count = reps.filter((r) => r.villageSlug === v.slug).length;
-          return (
-            <button
-              key={v.slug}
-              type="button"
-              onClick={() => setActiveVillage(v.slug)}
-              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition shrink-0 ${
-                activeVillage === v.slug
-                  ? "bg-emerald-800 text-white shadow-xs"
-                  : "bg-slate-100 hover:bg-slate-200 text-slate-700"
-              }`}
-            >
-              {v.name} ({count})
-            </button>
-          );
-        })}
       </div>
 
       {/* Representatives Grid */}
@@ -429,19 +414,12 @@ export function RepresentativeManagerClient({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block font-bold text-slate-700 mb-1">
-                    गाव निवडा *
+                    ग्रामपंचायत अधिकार क्षेत्र
                   </label>
-                  <select
-                    value={villageSlug}
-                    onChange={(e) => setVillageSlug(e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs font-semibold focus:ring-2 focus:ring-emerald-600 focus:outline-none bg-white"
-                  >
-                    {villages.map((v) => (
-                      <option key={v.slug} value={v.slug}>
-                        {v.name}
-                      </option>
-                    ))}
-                  </select>
+                  <div className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                    <Building2 className="w-3.5 h-3.5 text-emerald-700 shrink-0" />
+                    <span>{villages.find((v) => v.slug === defaultVillage)?.name || "कोमलवाडी"} ग्रामपंचायत</span>
+                  </div>
                 </div>
 
                 <div>

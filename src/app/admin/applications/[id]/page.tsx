@@ -2,7 +2,8 @@ import { connectDB } from "@/lib/mongodb";
 import { Application } from "@/models/Application";
 import "@/models/Village";
 import "@/models/Service";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
+import { getAdminSession } from "@/lib/auth";
 import { updateApplicationStatus } from "@/lib/actions/admin";
 import { ApplicationResponseManager } from "@/components/admin/ApplicationResponseManager";
 import Link from "next/link";
@@ -30,6 +31,11 @@ interface Props {
 export const dynamic = "force-dynamic";
 
 export default async function ApplicationDetailPage({ params }: Props) {
+  const session = await getAdminSession();
+  if (!session) {
+    redirect("/admin/login");
+  }
+
   const { id } = await params;
   const conn = await connectDB();
 
@@ -46,6 +52,12 @@ export default async function ApplicationDetailPage({ params }: Props) {
   }
 
   if (!app) notFound();
+
+  // Enforce single village access: admin can only access applications from their own village
+  const appVillageSlug = (app.villageId as any)?.slug || (app as any).villageSlug;
+  if (appVillageSlug && session.villageSlug && appVillageSlug !== session.villageSlug) {
+    notFound();
+  }
 
   async function updateStatusAction(formData: FormData) {
     "use server";

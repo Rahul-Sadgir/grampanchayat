@@ -19,6 +19,40 @@ const nextConfig: NextConfig = {
   experimental: {
     optimizePackageImports: ["lucide-react"],
   },
+  async redirects() {
+    return [
+      {
+        source: "/komalvadi",
+        destination: "/komalwadi",
+        permanent: true,
+      },
+      {
+        source: "/komalvadi/:path*",
+        destination: "/komalwadi/:path*",
+        permanent: true,
+      },
+      {
+        source: "/gulwanch",
+        destination: "/komalwadi",
+        permanent: false,
+      },
+      {
+        source: "/gulwanch/:path*",
+        destination: "/komalwadi/:path*",
+        permanent: false,
+      },
+      {
+        source: "/mazagaon",
+        destination: "/komalwadi",
+        permanent: false,
+      },
+      {
+        source: "/mazagaon/:path*",
+        destination: "/komalwadi/:path*",
+        permanent: false,
+      },
+    ];
+  },
 };
 
 export default nextConfig;

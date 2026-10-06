@@ -54,6 +54,7 @@ interface ProjectItem {
 interface Props {
   initialProjects: ProjectItem[];
   villages: VillageItem[];
+  selectedVillageSlug?: string;
 }
 
 const STATUS_FILTERS = [
@@ -63,9 +64,10 @@ const STATUS_FILTERS = [
   { label: "नियोजित (Planned)", value: "PLANNED" },
 ];
 
-export function ProjectManagerClient({ initialProjects, villages }: Props) {
+export function ProjectManagerClient({ initialProjects, villages, selectedVillageSlug }: Props) {
+  const defaultVillage = selectedVillageSlug || villages[0]?.slug || "komalwadi";
   const [projects, setProjects] = useState<ProjectItem[]>(initialProjects);
-  const [selectedVillage, setSelectedVillage] = useState<string>("ALL");
+  const [selectedVillage, setSelectedVillage] = useState<string>(defaultVillage);
   const [selectedStatus, setSelectedStatus] = useState<string>("ALL");
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -213,34 +215,15 @@ export function ProjectManagerClient({ initialProjects, villages }: Props) {
       {/* Village & Status Filters */}
       <div className="bg-white p-4 sm:p-5 rounded-3xl border border-slate-200 shadow-xs space-y-4">
         <div className="flex flex-col md:flex-row gap-3 justify-between items-stretch md:items-center">
-          {/* Village Select */}
+          {/* Village Jurisdiction Badge */}
           <div className="flex items-center gap-2">
-            <Building2 className="w-4 h-4 text-slate-400 shrink-0" />
-            <div className="flex flex-wrap gap-1.5 text-xs font-bold">
-              <button
-                onClick={() => setSelectedVillage("ALL")}
-                className={`px-3 py-1.5 rounded-xl transition ${
-                  selectedVillage === "ALL"
-                    ? "bg-emerald-800 text-white shadow-xs"
-                    : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                }`}
-              >
-                सर्व गावे
-              </button>
-              {villages.map((v) => (
-                <button
-                  key={v.slug}
-                  onClick={() => setSelectedVillage(v.slug)}
-                  className={`px-3 py-1.5 rounded-xl transition ${
-                    selectedVillage === v.slug
-                      ? "bg-emerald-800 text-white shadow-xs"
-                      : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                  }`}
-                >
-                  {v.name}
-                </button>
-              ))}
-            </div>
+            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+              अधिकार क्षेत्र:
+            </span>
+            <span className="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-emerald-800 text-white shadow-xs flex items-center gap-1.5">
+              <Building2 className="w-3.5 h-3.5 text-emerald-300" />
+              <span>{villages.find((v) => v.slug === defaultVillage)?.name || "कोमलवाडी"} ग्रामपंचायत</span>
+            </span>
           </div>
 
           {/* Search Box */}
@@ -446,19 +429,16 @@ export function ProjectManagerClient({ initialProjects, villages }: Props) {
 
             <form onSubmit={handleSubmit} className="space-y-3.5 text-xs">
               <div>
-                <label className="block font-bold text-slate-700 mb-1">कोणत्या गावासाठी? *</label>
-                <select
+                <label className="block font-bold text-slate-700 mb-1">ग्रामपंचायत अधिकार क्षेत्र</label>
+                <div className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                  <Building2 className="w-3.5 h-3.5 text-emerald-700 shrink-0" />
+                  <span>{villages.find((v) => v.slug === defaultVillage)?.name || "कोमलवाडी"} ग्रामपंचायत</span>
+                </div>
+                <input
+                  type="hidden"
                   name="villageId"
-                  required
-                  defaultValue={editingProject?.villageId?._id || villages[0]?._id}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-emerald-600 focus:outline-none bg-white font-medium"
-                >
-                  {villages.map((v) => (
-                    <option key={v._id} value={v._id}>
-                      {v.name} ग्रामपंचायत
-                    </option>
-                  ))}
-                </select>
+                  value={editingProject?.villageId?._id || villages.find((v) => v.slug === defaultVillage)?._id || villages[0]?._id}
+                />
               </div>
 
               <div>

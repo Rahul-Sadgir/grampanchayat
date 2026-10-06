@@ -2,17 +2,30 @@ import { connectDB } from "@/lib/mongodb";
 import { Service } from "@/models/Service";
 import { getAllVillages, FALLBACK_SERVICES } from "@/lib/data-provider";
 import { ServiceManagerClient } from "@/components/admin/ServiceManagerClient";
+import { getAdminSession } from "@/lib/auth";
+import { redirect } from "next/navigation";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminServicesPage() {
+  const session = await getAdminSession();
+  if (!session) {
+    redirect("/admin/login");
+  }
+
   const conn = await connectDB();
   const villages = await getAllVillages();
+  const villageSlug = session.villageSlug || "komalwadi";
+  const selectedVillage = villages.find((v: any) => v.slug === villageSlug) || villages[0];
 
   let services: any[] = [];
   if (conn) {
     try {
-      services = await Service.find()
+      const query = selectedVillage?._id
+        ? { $or: [{ villageId: selectedVillage._id }, { villageSlug }] }
+        : {};
+
+      services = await Service.find(query)
         .populate("villageId", "name slug")
         .sort({ order: 1, createdAt: -1 })
         .lean();
@@ -64,6 +77,7 @@ export default async function AdminServicesPage() {
         name: v.name,
         slug: v.slug,
       }))}
+      selectedVillageSlug={villageSlug}
     />
   );
 }
