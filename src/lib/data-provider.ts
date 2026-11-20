@@ -1,11 +1,4 @@
-import { connectDB } from "@/lib/mongodb";
-import { Village } from "@/models/Village";
-import { Service } from "@/models/Service";
-import { Notice } from "@/models/Notice";
-import { Scheme } from "@/models/Scheme";
-import { Project } from "@/models/Project";
-import { Form } from "@/models/Form";
-import { Representative } from "@/models/Representative";
+import { queryOne, queryMany } from "@/lib/db";
 import { FormSchemaDefinition } from "@/types/form";
 import { ALL_CITIZEN_SERVICES, ALL_CITIZEN_SCHEMAS } from "@/data/citizen-services";
 
@@ -59,6 +52,49 @@ export const FALLBACK_VILLAGES = [
     galleryImages: DEFAULT_VILLAGE_GALLERIES.komalwadi,
     primaryColor: "#003625",
     secondaryColor: "#9e4300",
+    population: "१,५९८",
+    malePopulation: "८०७",
+    femalePopulation: "७९१",
+    households: "२९५",
+    area: "५००० चौ.कि.मी.",
+    wards: "७",
+    literacyRate: "७२.३%",
+    femaleLiteracy: "३३.२%",
+    schools: "०४ केंद्रे",
+    distanceFromTaluka: "१८ कि.मी. (सिन्नर)",
+    distanceFromDistrict: "४२ कि.मी. (नाशिक)",
+    sarpanchMessage:
+      "गावातील शेवटच्या घटकापर्यंत शासकीय योजना पोहोचवणे आणि आधुनिक लोकसहभागातून समृद्ध, डिजिटल कोमलवाडी घडवणे हेच आमचे ध्येय आहे.",
+    speciality: "डिजिटल आदर्श स्मार्ट ग्राम",
+    highlightNotice: "",
+    prideHighlights: [
+      {
+        title: "तंटामुक्त गाव पुरस्कार प्राप्त",
+        description: "ग्रामस्थांच्या परस्पर सामंजस्याने, एकोप्याने व शांतताप्रिय सहकार्याने शासनाचा मानाचा तंटामुक्त गाव पुरस्कार कोमलवाडीला प्राप्त झाला आहे.",
+        year: "२०२३",
+      },
+      {
+        title: "१००% हागणदारीमुक्त व सुंदर गाव अभियान",
+        description: "गावात १००% वैयक्तिक शौचालये, सांडपाणी व्यवस्थापन व वृक्षारोपणातून संत गाडगेबाबा ग्रामस्वच्छता अभियानांतर्गत सुंदर गाव सन्मान.",
+        year: "२०२४",
+      },
+      {
+        title: "स्मार्ट डिजिटल ई-प्रशासन उपक्रम",
+        description: "गावातील नागरिकांसाठी सर्व दाखले, कर भरणा व शासकीय सेवा ऑनलाइन उपलब्ध करून देणारी नाशिक जिल्ह्यातील आदर्श डिजिटल ग्रामपंचायत.",
+        year: "२०२५",
+      },
+      {
+        title: "MPSC राज्यसेवा परीक्षेत ग्रामकन्येचे उत्तुंग यश",
+        description: "प्रतिकूल परिस्थितीवर मात करत महाराष्ट्र लोकसेवा आयोगाच्या (MPSC) राज्यसेवा परीक्षेत उपजिल्हाधिकारी पदी निवड होऊन गावाचे नाव राज्यात उंचावले आहे.",
+        year: "२०२४",
+      },
+    ],
+    visionPoints: [
+      "गावातील प्रत्येक कुटुंबाला २४ तास शुद्ध व मुबलक पिण्याचे पाणी उपलब्ध करणे.",
+      "१००% सांडपाणी व घनकचरा व्यवस्थापनातून गाव कचरामुक्त व हरित करणे.",
+      "डिजिटल ई-प्रशासनाच्या माध्यमातून सर्व शासकीय दाखले व सेवा घरबसल्या देणे.",
+      "महिला बचत गटांना बळकटी व युवकांसाठी कौशल्य विकास प्रशिक्षण देणे.",
+    ],
   },
 ];
 
@@ -472,13 +508,13 @@ export const FALLBACK_PROJECTS = [
 export async function getVillageBySlug(slug: string) {
   let villageData: any = null;
   try {
-    const conn = await connectDB();
-    if (conn) {
-      const village = await Village.findOne({ slug }).lean();
-      if (village) villageData = JSON.parse(JSON.stringify(village));
-    }
+    const village = await queryOne(
+      "SELECT * FROM villages WHERE LOWER(slug) = LOWER($1)",
+      [slug]
+    );
+    if (village) villageData = village;
   } catch (err) {
-    console.warn(`[Fallback] MongoDB not reachable for village slug '${slug}'. Using fallback data.`);
+    console.warn(`[Fallback] PostgreSQL not reachable for village slug '${slug}'. Using fallback data.`);
   }
 
   if (!villageData) {
@@ -516,15 +552,12 @@ export async function getVillageBySlug(slug: string) {
 export async function getAllVillages() {
   let villagesList: any[] = [];
   try {
-    const conn = await connectDB();
-    if (conn) {
-      const villages = await Village.find().sort({ name: 1 }).lean();
-      if (villages && villages.length > 0) {
-        villagesList = JSON.parse(JSON.stringify(villages));
-      }
+    const villages = await queryMany("SELECT * FROM villages ORDER BY name ASC");
+    if (villages && villages.length > 0) {
+      villagesList = villages;
     }
   } catch (err) {
-    console.warn("[Fallback] MongoDB not reachable for getAllVillages. Using fallback villages.");
+    console.warn("[Fallback] PostgreSQL not reachable for getAllVillages. Using fallback villages.");
   }
 
   if (villagesList.length === 0) {
@@ -559,98 +592,160 @@ export async function getAllVillages() {
 
 export async function getVillageServices(villageId?: any, villageSlug?: string) {
   try {
-    const conn = await connectDB();
-    if (conn) {
-      const query: any = { isActive: true };
-      if (villageId && villageSlug) {
-        query.$or = [{ villageId }, { villageSlug }];
-      } else if (villageId) {
-        query.villageId = villageId;
-      } else if (villageSlug) {
-        query.villageSlug = villageSlug;
-      }
-
-      const services = await Service.find(query).sort({ order: 1, createdAt: -1 }).lean();
-      if (services && services.length > 0) {
-        const plainServices = JSON.parse(JSON.stringify(services));
-        const fallbackMap = new Map(FALLBACK_SERVICES.map((s) => [s.slug, s]));
-
-        const normalizedDbServices = plainServices.map((s: any) => {
-          const fallback = fallbackMap.get(s.slug);
-          if (fallback) {
-            return {
-              ...s,
-              category: fallback.category,
-              name: s.name || fallback.name,
-              description: s.description || fallback.description,
-              icon: s.icon || fallback.icon,
-              actionText: s.actionText || fallback.actionText,
-              fee: s.fee || fallback.fee,
-            };
-          }
-          return s;
-        });
-
-        const dbSlugs = new Set(normalizedDbServices.map((s: any) => s.slug));
-        const missingFallbacks = FALLBACK_SERVICES.filter((f) => !dbSlugs.has(f.slug));
-        return [...normalizedDbServices, ...missingFallbacks];
-      }
+    const slug = villageSlug || "komalwadi";
+    const services = await queryMany(
+      `SELECT * FROM services 
+       WHERE is_active = true 
+         AND (LOWER(village_slug) = LOWER($1) OR village_id::text = $2)
+       ORDER BY created_at ASC`,
+      [slug, villageId ? String(villageId) : ""]
+    );
+    if (services && services.length > 0) {
+      return services;
     }
   } catch (err) {
-    console.warn("[Fallback] MongoDB not reachable for services. Using fallback services.");
+    console.warn("[getVillageServices] PostgreSQL error querying services:", err);
   }
 
-  return FALLBACK_SERVICES;
+  return [];
 }
 
 export async function getVillageNotices(villageId?: any, limit = 10, villageSlug?: string) {
   try {
-    const conn = await connectDB();
-    if (conn) {
-      let resolvedId = villageId;
-      let resolvedSlug = villageSlug;
-
-      if (!resolvedSlug && resolvedId) {
-        if (typeof resolvedId === "string" && !resolvedId.match(/^[0-9a-fA-F]{24}$/)) {
-          resolvedSlug = resolvedId;
-        }
-      }
-
-      if (resolvedSlug && !resolvedId) {
-        const v = await Village.findOne({ slug: resolvedSlug }).select("_id").lean();
-        if (v) resolvedId = v._id;
-      } else if (resolvedId && !resolvedSlug && String(resolvedId).match(/^[0-9a-fA-F]{24}$/)) {
-        const v = await Village.findById(resolvedId).select("slug").lean();
-        if (v) resolvedSlug = v.slug;
-      }
-
-      const orConditions: any[] = [];
-      if (resolvedId && String(resolvedId).match(/^[0-9a-fA-F]{24}$/)) {
-        orConditions.push({ villageId: resolvedId });
-      }
-      if (resolvedSlug) {
-        orConditions.push({ villageSlug: resolvedSlug });
-      }
-
-      const query: any = {
-        isActive: true,
-        ...(orConditions.length > 0 ? { $or: orConditions } : {}),
-      };
-
-      const notices = await Notice.find(query)
-        .sort({ isImportant: -1, publishedAt: -1 })
-        .limit(limit)
-        .lean();
-      if (notices && notices.length > 0) return JSON.parse(JSON.stringify(notices));
-    }
+    const slug = villageSlug || "komalwadi";
+    const notices = await queryMany(
+      `SELECT * FROM notices 
+       WHERE is_active = true 
+         AND (LOWER(village_slug) = LOWER($1) OR village_id::text = $2)
+       ORDER BY is_important DESC, published_at DESC 
+       LIMIT $3`,
+      [slug, villageId ? String(villageId) : "", limit]
+    );
+    if (notices) return notices;
   } catch (err) {
-    console.warn("[Fallback] MongoDB not reachable for notices. Using fallback notices.");
+    console.warn("[getVillageNotices] PostgreSQL error querying notices:", err);
   }
 
-  return FALLBACK_NOTICES.slice(0, limit).map((n, idx) => ({
-    ...n,
-    isImportant: idx === 0,
-  }));
+  return [];
+}
+
+export async function getVillageHappenings(villageId?: any, limit = 6, villageSlug?: string) {
+  try {
+    const slug = villageSlug || "komalwadi";
+    // 1. First fetch real events from events table
+    const happenings = await queryMany(
+      `SELECT * FROM events 
+       WHERE is_active = true 
+         AND (LOWER(village_slug) = LOWER($1) OR village_id::text = $2)
+       ORDER BY event_date DESC, created_at DESC 
+       LIMIT $3`,
+      [slug, villageId ? String(villageId) : "", limit]
+    );
+
+    if (happenings && happenings.length > 0) {
+      return happenings.map((h: any) => ({
+        ...h,
+        _id: (h.id || h._id).toString(),
+        images: Array.isArray(h.images) ? h.images : typeof h.images === "string" ? JSON.parse(h.images || "[]") : [],
+        imageUrl: h.coverImage || h.cover_image || (Array.isArray(h.images) && h.images[0]?.url) || h.imageUrl,
+        publishedAt: h.eventDate || h.event_date || h.publishedAt || h.createdAt,
+      }));
+    }
+
+    // 2. Fallback to notices if events are empty
+    const noticesFallback = await queryMany(
+      `SELECT * FROM notices 
+       WHERE is_active = true 
+         AND (LOWER(village_slug) = LOWER($1) OR village_id::text = $2)
+       ORDER BY published_at DESC 
+       LIMIT $3`,
+      [slug, villageId ? String(villageId) : "", limit]
+    );
+
+    if (noticesFallback) return noticesFallback;
+  } catch (err) {
+    console.warn("[getVillageHappenings] PostgreSQL error querying happenings:", err);
+  }
+
+  return [];
+}
+
+export async function getVillageEvents(villageSlug = "komalwadi", category?: string) {
+  try {
+    let sql = `
+      SELECT e.*, v.name as village_name, v.taluka as village_taluka, v.district as village_district
+      FROM events e
+      LEFT JOIN villages v ON e.village_id = v.id
+      WHERE e.is_active = true AND LOWER(e.village_slug) = LOWER($1)
+    `;
+    const params: any[] = [villageSlug];
+
+    if (category && category !== "सर्व" && category !== "ALL") {
+      sql += ` AND e.category = $2`;
+      params.push(category);
+    }
+
+    sql += ` ORDER BY e.event_date DESC, e.created_at DESC`;
+    const rows = await queryMany(sql, params);
+
+    return rows.map((h: any) => ({
+      ...h,
+      _id: (h.id || h._id).toString(),
+      images: Array.isArray(h.images) ? h.images : typeof h.images === "string" ? JSON.parse(h.images || "[]") : [],
+      coverImage: h.coverImage || h.cover_image || (Array.isArray(h.images) && h.images[0]?.url) || null,
+    }));
+  } catch (err) {
+    console.warn("[getVillageEvents] PostgreSQL error:", err);
+    return [];
+  }
+}
+
+export async function getVillageEventBySlug(villageSlug = "komalwadi", slugOrId: string) {
+  try {
+    const raw = (slugOrId || "").trim();
+    let decoded = raw;
+    try {
+      decoded = decodeURIComponent(raw);
+    } catch {}
+    let encoded = raw;
+    try {
+      encoded = encodeURIComponent(decoded);
+    } catch {}
+
+    const vSlug = (villageSlug || "komalwadi").trim();
+    let decodedVillageSlug = vSlug;
+    try {
+      decodedVillageSlug = decodeURIComponent(vSlug);
+    } catch {}
+
+    const event = await queryOne(
+      `SELECT e.*, v.name as village_name, v.taluka as village_taluka, v.district as village_district
+       FROM events e
+       LEFT JOIN villages v ON e.village_id = v.id
+       WHERE (LOWER(e.village_slug) = LOWER($1) OR LOWER(e.village_slug) = LOWER($2))
+         AND (
+           e.slug = $3 
+           OR e.slug = $4 
+           OR e.slug = $5
+           OR e.id::text = $3
+           OR e.id::text = $4
+         )
+       LIMIT 1`,
+      [vSlug, decodedVillageSlug, raw, decoded, encoded]
+    );
+
+    if (!event) return null;
+
+    return {
+      ...event,
+      _id: (event.id || event._id).toString(),
+      images: Array.isArray(event.images) ? event.images : typeof event.images === "string" ? JSON.parse(event.images || "[]") : [],
+      coverImage: event.coverImage || event.cover_image || (Array.isArray(event.images) && event.images[0]?.url) || null,
+    };
+  } catch (err) {
+    console.warn("[getVillageEventBySlug] PostgreSQL error:", err);
+    return null;
+  }
 }
 
 export function resolveSchemeImage(scheme: any): string {
@@ -720,69 +815,50 @@ function normalizeScheme(scheme: any) {
 
 export async function getVillageSchemes(_villageId?: any, limit = 20, _villageSlug?: string) {
   try {
-    const conn = await connectDB();
-    if (conn) {
-      // Schemes are common to all villages
-      const schemes = await Scheme.find({ isActive: true })
-        .sort({ createdAt: -1 })
-        .limit(limit)
-        .lean();
-      if (schemes && schemes.length > 0) {
-        return schemes.map((s: any) => normalizeScheme(s));
-      }
+    const schemes = await queryMany(
+      `SELECT * FROM schemes WHERE is_active = true ORDER BY created_at DESC LIMIT $1`,
+      [limit]
+    );
+    if (schemes && schemes.length > 0) {
+      return schemes.map((s: any) => normalizeScheme(s));
     }
   } catch (err) {
-    console.warn("[Fallback] MongoDB not reachable for schemes. Using fallback schemes.");
+    console.warn("[getVillageSchemes] PostgreSQL error querying schemes:", err);
   }
 
-  return FALLBACK_SCHEMES.slice(0, limit).map((s) => normalizeScheme(s));
+  return [];
 }
 
 export async function getSchemeBySlug(slug: string) {
   try {
-    const conn = await connectDB();
-    if (conn) {
-      const orConditions: any[] = [{ slug }];
-      if (/^[0-9a-fA-F]{24}$/.test(slug)) {
-        orConditions.push({ _id: slug });
-      }
-      const scheme = await Scheme.findOne({
-        $or: orConditions,
-        isActive: true,
-      }).lean();
-      if (scheme) return normalizeScheme(scheme);
-    }
+    const scheme = await queryOne(
+      `SELECT * FROM schemes WHERE is_active = true AND (slug = $1 OR id::text = $1)`,
+      [slug]
+    );
+    if (scheme) return normalizeScheme(scheme);
   } catch (err) {
-    console.warn(`[Fallback] MongoDB not reachable for scheme slug '${slug}'.`);
+    console.warn(`[getSchemeBySlug] PostgreSQL error for scheme slug '${slug}':`, err);
   }
 
-  const fallback = FALLBACK_SCHEMES.find(
-    (s) => s.slug === slug || s._id === slug
-  );
-  return fallback ? normalizeScheme(fallback) : null;
+  return null;
 }
 
 export async function getVillageProjects(villageId?: any, limit = 10, villageSlug?: string) {
   try {
-    const conn = await connectDB();
-    if (conn) {
-      const query: any = {};
-      if (villageId && villageSlug) {
-        query.$or = [{ villageId }, { villageSlug }];
-      } else if (villageId) {
-        query.villageId = villageId;
-      } else if (villageSlug) {
-        query.villageSlug = villageSlug;
-      }
-
-      const projects = await Project.find(query).sort({ createdAt: -1 }).limit(limit).lean();
-      if (projects && projects.length > 0) return JSON.parse(JSON.stringify(projects));
-    }
+    const slug = villageSlug || "komalwadi";
+    const projects = await queryMany(
+      `SELECT * FROM projects 
+       WHERE (LOWER(village_slug) = LOWER($1) OR village_id::text = $2)
+       ORDER BY created_at DESC 
+       LIMIT $3`,
+      [slug, villageId ? String(villageId) : "", limit]
+    );
+    if (projects) return projects;
   } catch (err) {
-    console.warn("[Fallback] MongoDB not reachable for projects. Using fallback projects.");
+    console.warn("[getVillageProjects] PostgreSQL error querying projects:", err);
   }
 
-  return FALLBACK_PROJECTS.slice(0, limit);
+  return [];
 }
 
 // ==================== VILLAGE-SPECIFIC EXTRACTED DATA ====================
@@ -945,46 +1021,69 @@ export const VILLAGE_DETAILS: Record<
   },
 };
 
-export function getVillageDetailsData(villageSlug: string) {
-  const slug = villageSlug.toLowerCase();
-  return VILLAGE_DETAILS[slug] || VILLAGE_DETAILS.komalwadi;
+export function getVillageDetailsData(villageSlug: string, villageDoc?: any) {
+  const doc = villageDoc;
+
+  return {
+    stats: {
+      population: doc?.population || "—",
+      malePopulation: doc?.malePopulation || "—",
+      femalePopulation: doc?.femalePopulation || "—",
+      households: doc?.households || "—",
+      area: doc?.area || "—",
+      wards: doc?.wards || "—",
+      literacyRate: doc?.literacyRate || "—",
+      femaleLiteracy: doc?.femaleLiteracy || "—",
+      schools: doc?.schools || "—",
+      distanceFromTaluka: doc?.distanceFromTaluka || "—",
+      distanceFromDistrict: doc?.distanceFromDistrict || "—",
+    },
+    visionPoints:
+      Array.isArray(doc?.visionPoints) && doc.visionPoints.length > 0
+        ? doc.visionPoints
+        : [],
+    initiatives: [],
+    prideHighlights: Array.isArray(doc?.prideHighlights) ? doc.prideHighlights : [],
+    sarpanchMessage: doc?.sarpanchMessage || "",
+    speciality: doc?.speciality || "",
+    highlightNotice: doc?.highlightNotice || "",
+    representatives: [],
+  };
 }
 
 export async function getVillageRepresentatives(villageSlug: string) {
   const slug = villageSlug.toLowerCase();
   try {
-    const conn = await connectDB();
-    if (conn) {
-      const reps = await Representative.find({
-        villageSlug: slug,
-        isActive: true,
-      })
-        .sort({ order: 1, createdAt: 1 })
-        .lean();
+    const reps = await queryMany(
+      `SELECT * FROM representatives 
+       WHERE LOWER(village_slug) = LOWER($1) AND is_active = true 
+       ORDER BY order_num ASC, created_at ASC`,
+      [slug]
+    );
 
-      if (reps && reps.length > 0) {
-        return reps.map((r: any) => ({
-          role: r.role,
-          name: r.name,
-          phone: r.phone || "",
-          email: r.email || "",
-          ward: r.ward || "",
-          photoUrl: r.photoUrl || "",
-          isSarpanch: Boolean(r.isSarpanch || r.role === "सरपंच"),
-          isUpasarpanch: Boolean(r.isUpasarpanch || r.role === "उपसरपंच"),
-          isOfficer: Boolean(
-            r.role.includes("ग्रामसेवक") || r.role.includes("ग्रामविकास अधिकारी")
-          ),
-          term: r.term || "२०२२ - २०२७",
-        }));
-      }
+    if (reps && reps.length > 0) {
+      return reps.map((r: any) => ({
+        _id: (r.id || r._id)?.toString(),
+        id: (r.id || r._id)?.toString(),
+        role: r.role,
+        name: r.name,
+        phone: r.phone || "",
+        email: r.email || "",
+        ward: r.ward || "",
+        photoUrl: r.photoUrl || "",
+        isSarpanch: Boolean(r.isSarpanch || r.role === "सरपंच"),
+        isUpasarpanch: Boolean(r.isUpasarpanch || r.role === "उपसरपंच"),
+        isOfficer: Boolean(
+          r.role.includes("ग्रामसेवक") || r.role.includes("ग्रामविकास अधिकारी")
+        ),
+        term: r.term || "२०२२ - २०२७",
+      }));
     }
   } catch (err) {
-    console.warn(`[getVillageRepresentatives] Fallback for ${slug}:`, err);
+    console.warn(`[getVillageRepresentatives] PostgreSQL error for ${slug}:`, err);
   }
 
-  const details = getVillageDetailsData(slug);
-  return details?.representatives || [];
+  return [];
 }
 
 export async function getServiceAndForm(villageId: any, serviceSlug: string) {
@@ -992,20 +1091,33 @@ export async function getServiceAndForm(villageId: any, serviceSlug: string) {
   let schema: FormSchemaDefinition | null = null;
 
   try {
-    const conn = await connectDB();
-    if (conn && villageId) {
-      service = await Service.findOne({ villageId, slug: serviceSlug }).lean();
-      if (service) {
-        const form = await Form.findOne({ serviceId: service._id, isActive: true })
-          .sort({ version: -1 })
-          .lean();
-        if (form && form.schema) {
-          schema = form.schema as FormSchemaDefinition;
-        }
+    if (villageId) {
+      service = await queryOne(
+        `SELECT * FROM services 
+         WHERE slug = $1 AND (village_id::text = $2 OR village_slug = $2)`,
+        [serviceSlug, String(villageId)]
+      );
+    }
+    if (!service) {
+      service = await queryOne(
+        `SELECT * FROM services WHERE slug = $1 LIMIT 1`,
+        [serviceSlug]
+      );
+    }
+
+    if (service) {
+      const form = await queryOne(
+        `SELECT * FROM forms 
+         WHERE service_id = $1 AND is_active = true 
+         ORDER BY version DESC LIMIT 1`,
+        [service.id]
+      );
+      if (form && form.schema) {
+        schema = typeof form.schema === "string" ? JSON.parse(form.schema) : form.schema;
       }
     }
   } catch (err) {
-    console.warn(`[Fallback] DB query failed for service ${serviceSlug}.`);
+    console.warn(`[getServiceAndForm] PostgreSQL query error for service ${serviceSlug}:`, err);
   }
 
   if (!service) {

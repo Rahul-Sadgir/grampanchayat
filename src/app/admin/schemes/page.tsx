@@ -1,4 +1,3 @@
-import { connectDB } from "@/lib/mongodb";
 import { getSchemesAdmin } from "@/lib/actions/schemes";
 import { SchemeManagerClient } from "@/components/admin/SchemeManagerClient";
 import { getAdminSession } from "@/lib/auth";
@@ -12,7 +11,6 @@ export default async function AdminSchemesPage() {
     redirect("/admin/login");
   }
 
-  await connectDB();
   const schemes = await getSchemesAdmin();
 
   return (

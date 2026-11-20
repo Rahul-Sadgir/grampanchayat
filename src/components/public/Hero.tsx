@@ -59,7 +59,7 @@ export function Hero({
         <div className="relative z-10 p-3.5 sm:p-7 md:p-9 flex flex-col justify-end space-y-1.5 sm:space-y-3">
           {/* Village Title & Tagline */}
           <div className="space-y-0.5 sm:space-y-1">
-            <h1 className="text-lg sm:text-3xl md:text-5xl font-black tracking-tight leading-tight text-white drop-shadow">
+            <h1 className="text-lg sm:text-3xl md:text-5xl font-black tracking-normal leading-[1.4] text-white drop-shadow py-0.5">
               {villageName} ग्रामपंचायत
             </h1>
             <p className="text-xs sm:text-base md:text-lg text-[#F5D77F] font-bold drop-shadow-sm">

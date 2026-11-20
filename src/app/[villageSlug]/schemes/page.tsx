@@ -113,9 +113,9 @@ export default async function SchemesPage({ params }: Props) {
                   {s.subsidyDetails && (
                     <div className="p-3 bg-gradient-to-r from-[#F4EFE6] to-[#FBF9F5] rounded-2xl border border-[#E5DEC9] flex items-center gap-2">
                       <Award className="w-4 h-4 text-[#9e4300] shrink-0" />
-                      <div className="min-w-0">
+                      <div className="min-w-0 flex-1 py-0.5">
                         <span className="text-[10px] font-bold text-[#9e4300] block uppercase">अनुदान / लाभ:</span>
-                        <strong className="text-xs text-[#003625] font-black truncate block">
+                        <strong className="text-xs text-[#003625] font-black break-words leading-[1.4] block py-0.5">
                           {s.subsidyDetails}
                         </strong>
                       </div>

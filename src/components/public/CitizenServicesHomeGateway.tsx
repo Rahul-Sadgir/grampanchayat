@@ -54,7 +54,7 @@ export function CitizenServicesHomeGateway({
             </div>
             <h2
               id="citizen-services-heading"
-              className="text-2xl sm:text-3xl font-extrabold text-[#003625] tracking-tight"
+              className="text-2xl sm:text-3xl font-extrabold text-[#003625] tracking-normal leading-[1.45] py-0.5"
             >
               नागरिक सेवा
             </h2>
@@ -111,11 +111,11 @@ export function CitizenServicesHomeGateway({
                     <TabIcon className="w-4 h-4 sm:w-4.5 sm:h-4.5" />
                   </div>
 
-                  <div className="min-w-0">
-                    <span className="text-xs sm:text-sm font-bold text-[#003625] group-hover:text-[#9e4300] transition-colors truncate block leading-tight">
+                  <div className="min-w-0 py-0.5">
+                    <span className="text-xs sm:text-sm font-bold text-[#003625] group-hover:text-[#9e4300] transition-colors block leading-[1.4] break-words">
                       {cat.shortLabel || cat.label}
                     </span>
-                    <span className="text-[10px] text-[#707973] font-medium hidden sm:block truncate mt-0.5">
+                    <span className="text-[10px] text-[#707973] font-medium hidden sm:block break-words leading-[1.4] mt-0.5">
                       {cat.slug === "aarz" ? "१० ऑनलाइन अर्ज" : cat.actionDefault}
                     </span>
                   </div>

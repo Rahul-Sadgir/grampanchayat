@@ -330,7 +330,7 @@ export function SchemeManagerClient({ initialSchemes }: Props) {
                     {s.subsidyDetails && (
                       <div className="p-2 bg-gradient-to-r from-amber-50 to-emerald-50 rounded-xl border border-amber-200/80 text-[11px]">
                         <span className="text-[10px] font-bold text-amber-900 block">अनुदान:</span>
-                        <strong className="text-emerald-950 font-black truncate block">
+                        <strong className="text-emerald-950 font-black break-words leading-[1.4] block py-0.5">
                           {s.subsidyDetails}
                         </strong>
                       </div>
@@ -426,11 +426,10 @@ export function SchemeManagerClient({ initialSchemes }: Props) {
                 </div>
 
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">URL Slug *</label>
+                  <label className="block font-bold text-slate-700 mb-1">URL Slug</label>
                   <input
                     name="slug"
-                    required
-                    defaultValue={editingScheme?.slug || `pmay-rural-${Date.now()}`}
+                    defaultValue={editingScheme?.slug || ""}
                     placeholder="उदा. pmay-rural-gharkul"
                     className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-emerald-600 focus:outline-none font-mono"
                   />
@@ -478,7 +477,7 @@ export function SchemeManagerClient({ initialSchemes }: Props) {
                       <div className="relative w-full aspect-video rounded-lg overflow-hidden bg-slate-200">
                         <Image src={preset.url} alt={preset.name} fill className="object-cover" />
                       </div>
-                      <span className="text-[10px] truncate w-full">{preset.name}</span>
+                      <span className="text-[10px] break-words leading-[1.3] w-full py-0.5">{preset.name}</span>
                     </button>
                   ))}
                 </div>

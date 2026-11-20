@@ -73,7 +73,7 @@ export default async function SchemeDetailPage({ params }: Props) {
           शासकीय योजना
         </Link>
         <ChevronRight className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-        <span className="text-slate-900 font-bold truncate">{scheme.title}</span>
+        <span className="text-slate-900 font-bold break-words leading-[1.4] py-0.5">{scheme.title}</span>
       </div>
 
       <Link
@@ -101,7 +101,7 @@ export default async function SchemeDetailPage({ params }: Props) {
           )}
         </div>
 
-        <h1 className="text-2xl sm:text-4xl font-extrabold text-[#003625] leading-tight">
+        <h1 className="text-2xl sm:text-4xl font-extrabold text-[#003625] leading-[1.4] py-0.5 break-words">
           {scheme.title}
         </h1>
 

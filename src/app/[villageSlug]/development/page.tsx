@@ -129,7 +129,7 @@ export default async function DevelopmentPage({ params }: Props) {
                   {p.agency && (
                     <div className="p-2.5 bg-[#FBF9F5] rounded-xl border border-[#E5DEC9] col-span-2 sm:col-span-1">
                       <span className="text-[#526056] block text-[10px]">कार्यकारी यंत्रणा</span>
-                      <span className="font-bold text-[#1E2621] truncate block">
+                      <span className="font-bold text-[#1E2621] break-words leading-[1.4] block py-0.5">
                         {p.agency}
                       </span>
                     </div>

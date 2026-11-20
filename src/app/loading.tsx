@@ -9,13 +9,14 @@ export default function RootLoading() {
           <div className="absolute inset-0 rounded-full border-4 border-[#003625]/20 border-t-[#003625] animate-spin" />
           <div className="absolute inset-2 rounded-full border-4 border-[#9e4300]/20 border-b-[#9e4300] animate-spin [animation-duration:1.5s] [animation-direction:reverse]" />
           
-          <div className="relative w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white shadow-md p-1.5 flex items-center justify-center">
+          <div className="relative w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-white shadow-md p-1 flex items-center justify-center">
             <Image
-              src="/images/emblem.webp"
-              alt="महाराष्ट्र शासन बोधचिन्ह"
-              width={40}
-              height={40}
-              className="object-contain"
+              src="/images/grampanchayat-emblem.webp"
+              alt="महाराष्ट्र शासन ग्रामपंचायत अधिकृत बोधचिन्ह"
+              width={48}
+              height={48}
+              unoptimized
+              className="object-contain rounded-full"
               priority
             />
           </div>
@@ -28,7 +29,7 @@ export default function RootLoading() {
             <span>डिजिटल ग्रामपंचायत महापोर्टल</span>
           </div>
 
-          <h3 className="text-base sm:text-lg font-extrabold text-[#003625] tracking-tight">
+          <h3 className="text-base sm:text-lg font-extrabold text-[#003625] tracking-normal leading-[1.45] py-0.5">
             माहिती लोड होत आहे...
           </h3>
 

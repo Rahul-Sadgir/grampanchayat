@@ -41,11 +41,12 @@ export function Footer({ village }: FooterProps) {
             <div className="hidden md:block space-y-3">
               <div className="flex items-center gap-2.5">
                 <Image
-                  src="/images/emblem.webp"
+                  src="/images/grampanchayat-emblem.webp"
                   alt="महाराष्ट्र शासन ग्रामपंचायत अधिकृत बोधचिन्ह"
                   width={36}
                   height={36}
-                  className="h-9 w-9 object-contain shrink-0"
+                  unoptimized
+                  className="h-9 w-9 object-contain rounded-full shrink-0"
                 />
                 <span className="font-extrabold text-[#003625] text-base">
                   ग्रामपंचायत {village.name}
@@ -64,7 +65,7 @@ export function Footer({ village }: FooterProps) {
 
             {/* Col 2: महत्त्वाचे दुवे (Important Links - Desktop Only) */}
             <div className="hidden md:block space-y-3">
-              <h4 className="font-bold text-[#003625] text-sm tracking-tight">
+              <h4 className="font-bold text-[#003625] text-sm tracking-normal leading-[1.45] py-0.5">
                 महत्त्वाचे दुवे
               </h4>
               <ul className="space-y-2 text-xs text-[#526056]">
@@ -97,6 +98,15 @@ export function Footer({ village }: FooterProps) {
                 </li>
                 <li>
                   <Link
+                    href={`/${village.slug}/events`}
+                    className="hover:text-[#003625] transition-colors flex items-center gap-1.5"
+                  >
+                    <ArrowRight className="w-3.5 h-3.5 text-[#9e4300]" />
+                    <span>गावातील घडामोडी व उपक्रम (Blog)</span>
+                  </Link>
+                </li>
+                <li>
+                  <Link
                     href={`/${village.slug}/schemes`}
                     className="hover:text-[#003625] transition-colors flex items-center gap-1.5"
                   >
@@ -118,7 +128,7 @@ export function Footer({ village }: FooterProps) {
 
             {/* Col 3: शासकीय संकेतस्थळे (Govt Portals - Desktop Only) */}
             <div className="hidden md:block space-y-3">
-              <h4 className="font-bold text-[#003625] text-sm tracking-tight">
+              <h4 className="font-bold text-[#003625] text-sm tracking-normal leading-[1.45] py-0.5">
                 शासकीय संकेतस्थळे
               </h4>
               <ul className="space-y-2 text-xs text-[#526056]">
@@ -173,13 +183,14 @@ export function Footer({ village }: FooterProps) {
             <div className="space-y-3">
               <div className="flex items-center gap-2">
                 <Image
-                  src="/images/emblem.webp"
+                  src="/images/grampanchayat-emblem.webp"
                   alt="महाराष्ट्र शासन ग्रामपंचायत अधिकृत बोधचिन्ह"
                   width={24}
                   height={24}
-                  className="h-6 w-6 object-contain shrink-0 md:hidden"
+                  unoptimized
+                  className="h-6 w-6 object-contain rounded-full shrink-0 md:hidden"
                 />
-                <h4 className="font-bold text-[#003625] text-sm tracking-tight">
+                <h4 className="font-bold text-[#003625] text-sm tracking-normal leading-[1.45] py-0.5">
                   <span className="md:hidden">ग्रामपंचायत {village.name} - </span>कार्यालयीन संपर्क
                 </h4>
               </div>

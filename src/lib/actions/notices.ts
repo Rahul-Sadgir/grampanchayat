@@ -1,79 +1,40 @@
 "use server";
 
-import { connectDB } from "@/lib/mongodb";
-import { Notice } from "@/models/Notice";
-import { Village } from "@/models/Village";
+import { queryOne, queryMany, dbQuery } from "@/lib/db";
 import { uploadFileBuffer } from "@/lib/cloudinary";
-import { getVillageBySlug, FALLBACK_NOTICES } from "@/lib/data-provider";
+import { getVillageBySlug } from "@/lib/data-provider";
 import { revalidatePath } from "next/cache";
+import { requireAdminSession } from "@/lib/auth";
 
 export async function getNoticesAdmin(villageSlug?: string) {
   try {
-    await connectDB();
+    const session = await requireAdminSession(villageSlug);
+    const targetSlug = session.role === "SUPER_ADMIN" ? villageSlug : session.villageSlug;
 
-    // Backfill any existing notices without villageSlug
-    const missingSlugNotices = await Notice.find({
-      $or: [{ villageSlug: { $exists: false } }, { villageSlug: null }, { villageSlug: "" }],
-    }).populate("villageId", "slug");
+    const values: any[] = [];
+    const whereClauses: string[] = ["n.is_active = true"];
 
-    for (const n of missingSlugNotices) {
-      if ((n.villageId as any)?.slug) {
-        await Notice.findByIdAndUpdate(n._id, {
-          villageSlug: (n.villageId as any).slug,
-        });
-      }
+    if (targetSlug && targetSlug !== "ALL") {
+      values.push(targetSlug);
+      whereClauses.push(`LOWER(n.village_slug) = LOWER($${values.length})`);
     }
 
-    const query: any = {};
-    if (villageSlug && villageSlug !== "ALL") {
-      query.$or = [{ villageSlug }, { "villageId.slug": villageSlug }];
-    }
+    const whereSql = `WHERE ${whereClauses.join(" AND ")}`;
+    const sql = `
+      SELECT n.*, v.name as village_name, v.slug as village_slug_resolved
+      FROM notices n
+      LEFT JOIN villages v ON n.village_id = v.id
+      ${whereSql}
+      ORDER BY n.is_important DESC, n.published_at DESC
+    `;
 
-    let notices = await Notice.find(query)
-      .populate("villageId", "name slug")
-      .sort({ isImportant: -1, publishedAt: -1 })
-      .lean();
-
-    // Auto-seed if database is empty so admins can edit/toggle right away
-    if (notices.length === 0) {
-      let defaultVillage = await Village.findOne({});
-      if (!defaultVillage) {
-        defaultVillage = await Village.create({
-          name: "कोमलवाडी",
-          slug: "komalwadi",
-          district: "नाशिक",
-          taluka: "सिन्नर",
-          state: "महाराष्ट्र",
-          primaryColor: "#003625",
-          secondaryColor: "#9e4300",
-        });
-      }
-
-      const docs = FALLBACK_NOTICES.map((f, idx) => ({
-        villageId: defaultVillage._id,
-        villageSlug: defaultVillage.slug,
-        title: f.title,
-        content: f.content,
-        category: "जाहिर सूचना",
-        isImportant: idx === 0, // default first notice as important
-        publishedAt: f.publishedAt || new Date(),
-        isActive: true,
-      }));
-
-      await Notice.insertMany(docs);
-
-      notices = await Notice.find(query)
-        .populate("villageId", "name slug")
-        .sort({ isImportant: -1, publishedAt: -1 })
-        .lean();
-    }
-
+    const notices = await queryMany(sql, values);
     return notices.map((n: any) => ({
       ...n,
-      _id: n._id.toString(),
-      villageId: n.villageId?._id ? n.villageId._id.toString() : (n.villageId ? n.villageId.toString() : ""),
-      villageName: n.villageId?.name || n.villageSlug || "—",
-      villageSlug: n.villageSlug || n.villageId?.slug || "",
+      _id: (n.id || n._id).toString(),
+      villageId: (n.villageId || n.village_id || "").toString(),
+      villageName: n.villageName || n.villageSlug || "—",
+      villageSlug: n.villageSlug || "",
       publishedAt: n.publishedAt ? new Date(n.publishedAt).toISOString() : new Date().toISOString(),
       isImportant: Boolean(n.isImportant),
     }));
@@ -91,10 +52,11 @@ export interface SaveNoticeResult {
 
 export async function saveNotice(formData: FormData): Promise<SaveNoticeResult> {
   try {
-    await connectDB();
+    const rawVillageSlug = (formData.get("villageSlug") as string) || "komalwadi";
+    const session = await requireAdminSession(rawVillageSlug);
+    const villageSlug = session.role === "SUPER_ADMIN" ? rawVillageSlug : session.villageSlug;
 
     const id = formData.get("id") as string | null;
-    const villageSlug = (formData.get("villageSlug") as string) || "komalwadi";
     const title = (formData.get("title") as string)?.trim();
     const content = (formData.get("content") as string)?.trim() || "";
     const category = (formData.get("category") as string)?.trim() || "जाहिर सूचना";
@@ -109,26 +71,26 @@ export async function saveNotice(formData: FormData): Promise<SaveNoticeResult> 
     const publishedAtStr = formData.get("publishedAt") as string;
     const publishedAt = publishedAtStr ? new Date(publishedAtStr) : new Date();
     const docFile = formData.get("docFile") as File | null;
-    let documentUrl = (formData.get("documentUrl") as string) || "";
-    let fileName = (formData.get("fileName") as string) || "";
+    let fileUrl = (formData.get("documentUrl") as string) || "";
 
     if (!title || !content) {
       return { success: false, error: "कृपया शीर्षक आणि मजकूर प्रविष्ट करा." };
     }
 
-    let dbVillage = await Village.findOne({ slug: villageSlug });
+    let dbVillage = await queryOne(
+      "SELECT * FROM villages WHERE LOWER(slug) = LOWER($1)",
+      [villageSlug]
+    );
+
     if (!dbVillage) {
       const vData = await getVillageBySlug(villageSlug);
       if (vData) {
-        dbVillage = await Village.create({
-          name: vData.name,
-          slug: vData.slug,
-          district: vData.district,
-          taluka: vData.taluka,
-          state: "महाराष्ट्र",
-          primaryColor: "#003625",
-          secondaryColor: "#9e4300",
-        });
+        dbVillage = await queryOne(
+          `INSERT INTO villages (name, slug, district, taluka, state, primary_color, secondary_color)
+           VALUES ($1, $2, $3, $4, $5, $6, $7)
+           RETURNING *`,
+          [vData.name, vData.slug, vData.district, vData.taluka, "महाराष्ट्र", "#003625", "#9e4300"]
+        );
       }
     }
 
@@ -145,43 +107,30 @@ export async function saveNotice(formData: FormData): Promise<SaveNoticeResult> 
         filename: docFile.name || "notice.pdf",
         resourceType: "auto",
       });
-      documentUrl = uploadRes.url;
-      fileName = docFile.name;
+      fileUrl = uploadRes.url;
     }
 
     let notice: any = null;
 
-    if (id && id.match(/^[0-9a-fA-F]{24}$/)) {
-      notice = await Notice.findByIdAndUpdate(
-        id,
-        {
-          villageId: dbVillage._id,
-          villageSlug,
-          title,
-          content,
-          category,
-          isImportant,
-          publishedAt,
-          ...(documentUrl ? { documentUrl, fileName } : {}),
-        },
-        { new: true }
+    if (id) {
+      notice = await queryOne(
+        `UPDATE notices
+         SET village_id = $1, village_slug = $2, title = $3, content = $4,
+             category = $5, is_important = $6, published_at = $7,
+             file_url = COALESCE($8, file_url), updated_at = NOW()
+         WHERE id::text = $9
+         RETURNING *`,
+        [dbVillage.id, villageSlug, title, content, category, isImportant, publishedAt, fileUrl || null, id]
       );
     }
 
-    // If notice was not in DB yet (or fallback ID was edited), create a fresh record in DB
     if (!notice) {
-      notice = await Notice.create({
-        villageId: dbVillage._id,
-        villageSlug,
-        title,
-        content,
-        category,
-        isImportant,
-        publishedAt,
-        documentUrl,
-        fileName,
-        isActive: true,
-      });
+      notice = await queryOne(
+        `INSERT INTO notices (village_id, village_slug, title, content, category, is_important, published_at, file_url, is_active)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, true)
+         RETURNING *`,
+        [dbVillage.id, villageSlug, title, content, category, isImportant, publishedAt, fileUrl || null]
+      );
     }
 
     revalidatePath("/admin/notices");
@@ -190,9 +139,9 @@ export async function saveNotice(formData: FormData): Promise<SaveNoticeResult> 
     revalidatePath(`/${villageSlug}/notices`);
 
     const formattedNotice = {
-      ...JSON.parse(JSON.stringify(notice)),
-      _id: notice._id.toString(),
-      villageId: dbVillage._id.toString(),
+      ...notice,
+      _id: (notice.id || notice._id).toString(),
+      villageId: dbVillage.id.toString(),
       villageName: dbVillage.name,
       villageSlug,
       publishedAt: notice.publishedAt ? new Date(notice.publishedAt).toISOString() : new Date().toISOString(),
@@ -214,8 +163,18 @@ export async function saveNotice(formData: FormData): Promise<SaveNoticeResult> 
 
 export async function deleteNotice(id: string) {
   try {
-    await connectDB();
-    const n = await Notice.findByIdAndDelete(id);
+    const session = await requireAdminSession();
+
+    // Enforce village isolation check (CWE-639)
+    const existing = await queryOne("SELECT id, village_slug FROM notices WHERE id::text = $1", [id]);
+    if (!existing) {
+      return { success: false, error: "सूचना सापडली नाही." };
+    }
+    if (session.role !== "SUPER_ADMIN" && existing.villageSlug?.toLowerCase() !== session.villageSlug.toLowerCase()) {
+      return { success: false, error: "प्रवेश नाकारला: आपल्याकडे ही सूचना हटवण्याचे अधिकार नाहीत." };
+    }
+
+    const n = await queryOne("DELETE FROM notices WHERE id::text = $1 RETURNING *", [id]);
     if (n) {
       revalidatePath("/admin/notices");
       revalidatePath("/admin/dashboard");
@@ -231,26 +190,23 @@ export async function deleteNotice(id: string) {
 
 export async function toggleNoticeImportant(id: string, isImportant: boolean) {
   try {
-    await connectDB();
-    let n: any = null;
+    const session = await requireAdminSession();
 
-    if (id && id.match(/^[0-9a-fA-F]{24}$/)) {
-      n = await Notice.findByIdAndUpdate(id, { isImportant }, { new: true });
+    const existing = await queryOne("SELECT id, village_slug FROM notices WHERE id::text = $1", [id]);
+    if (!existing) {
+      return { success: false, error: "सूचना सापडली नाही." };
+    }
+    if (session.role !== "SUPER_ADMIN" && existing.villageSlug?.toLowerCase() !== session.villageSlug.toLowerCase()) {
+      return { success: false, error: "प्रवेश नाकारला: आपल्याकडे ही सूचना अद्यतनित करण्याचे अधिकार नाहीत." };
     }
 
+    const n = await queryOne(
+      "UPDATE notices SET is_important = $1, updated_at = NOW() WHERE id::text = $2 RETURNING *",
+      [isImportant, id]
+    );
+
     if (!n) {
-      const fallback = FALLBACK_NOTICES.find((f: any) => f._id === id);
-      const defaultVillage = await Village.findOne({});
-      n = await Notice.create({
-        villageId: defaultVillage?._id,
-        villageSlug: defaultVillage?.slug || "komalwadi",
-        title: fallback?.title || "ग्रामपंचायत जाहीर सूचना",
-        content: fallback?.content || "ग्रामपंचायत अधिकृत सूचना",
-        category: "जाहिर सूचना",
-        isImportant,
-        publishedAt: fallback?.publishedAt || new Date(),
-        isActive: true,
-      });
+      return { success: false, error: "सूचना सापडली नाही." };
     }
 
     revalidatePath("/admin/notices");
@@ -263,7 +219,7 @@ export async function toggleNoticeImportant(id: string, isImportant: boolean) {
     return {
       success: true,
       isImportant: Boolean(n?.isImportant),
-      notice: JSON.parse(JSON.stringify(n)),
+      notice: n,
     };
   } catch (error: any) {
     console.error("[toggleNoticeImportant] Error:", error);

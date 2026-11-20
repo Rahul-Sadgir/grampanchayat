@@ -47,7 +47,7 @@ export default async function ServicesPage({ params, searchParams }: Props) {
 
       {/* Page Header */}
       <div>
-        <h1 className="text-2xl sm:text-3xl font-extrabold text-[#003625] tracking-tight">
+        <h1 className="text-2xl sm:text-3xl font-extrabold text-[#003625] tracking-normal leading-[1.45] py-0.5">
           नागरिक सेवा
         </h1>
       </div>

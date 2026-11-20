@@ -1,45 +1,19 @@
 "use server";
 
-import { connectDB } from "@/lib/mongodb";
-import { Scheme } from "@/models/Scheme";
+import { queryOne, queryMany, dbQuery } from "@/lib/db";
 import { uploadFileBuffer } from "@/lib/cloudinary";
 import { FALLBACK_SCHEMES } from "@/lib/data-provider";
 import { revalidatePath } from "next/cache";
+import { requireAdminSession } from "@/lib/auth";
 
 export async function getSchemesAdmin() {
   try {
-    await connectDB();
-    let schemes = await Scheme.find()
-      .sort({ createdAt: -1 })
-      .lean();
-
-    if (schemes.length === 0) {
-      const docs = FALLBACK_SCHEMES.map((s) => ({
-        villageSlug: "ALL",
-        slug: s.slug,
-        title: s.title,
-        category: s.category,
-        imageUrl: s.imageUrl,
-        description: s.description,
-        subsidyDetails: s.subsidyDetails,
-        targetAudience: s.targetAudience,
-        benefits: s.benefits,
-        eligibility: s.eligibility,
-        documentsRequired: s.documentsRequired,
-        applicationProcess: s.applicationProcess,
-        content: s.content,
-        faq: s.faq,
-        externalLink: s.externalLink,
-        isActive: true,
-      }));
-
-      if (docs.length > 0) {
-        await Scheme.insertMany(docs);
-        schemes = await Scheme.find().sort({ createdAt: -1 }).lean();
-      }
-    }
-
-    return JSON.parse(JSON.stringify(schemes));
+    await requireAdminSession();
+    const schemes = await queryMany("SELECT * FROM schemes ORDER BY created_at DESC");
+    return schemes.map((s: any) => ({
+      ...s,
+      _id: (s.id || s._id).toString(),
+    }));
   } catch (error) {
     console.error("Error in getSchemesAdmin:", error);
     return [];
@@ -48,8 +22,7 @@ export async function getSchemesAdmin() {
 
 export async function saveScheme(formData: FormData) {
   try {
-    await connectDB();
-
+    const session = await requireAdminSession();
     const id = formData.get("id") as string | null;
     let slug = (formData.get("slug") as string)?.trim().toLowerCase();
     const title = (formData.get("title") as string)?.trim();
@@ -65,7 +38,6 @@ export async function saveScheme(formData: FormData) {
     const benefitsStr = (formData.get("benefitsStr") as string)?.trim();
 
     const imageFile = formData.get("image") as File | null;
-    const attachmentFile = formData.get("attachment") as File | null;
 
     if (!title || !category || !description) {
       return { success: false, error: "कृपया सर्व आवश्यक माहिती भरा." };
@@ -89,51 +61,87 @@ export async function saveScheme(formData: FormData) {
       imageUrl = uploadRes.url;
     }
 
-    let attachmentUrl = (formData.get("existingAttachmentUrl") as string) || undefined;
-    let attachmentName = (formData.get("existingAttachmentName") as string) || undefined;
-
-    if (attachmentFile && attachmentFile.size > 0 && typeof attachmentFile.arrayBuffer === "function") {
-      const buffer = Buffer.from(await attachmentFile.arrayBuffer());
-      const uploadRes = await uploadFileBuffer(buffer, {
-        folder: "schemes/circulars",
-        filename: attachmentFile.name,
-        resourceType: "raw",
-      });
-      attachmentUrl = uploadRes.url;
-      attachmentName = attachmentFile.name;
-    }
-
     const benefits = benefitsStr
       ? benefitsStr.split("\n").map((b) => b.trim()).filter(Boolean)
-      : undefined;
+      : [];
 
-    // Schemes are universal and common for all villages
-    const payload = {
-      villageSlug: "ALL",
-      slug,
-      title,
-      category,
-      imageUrl,
-      description,
-      subsidyDetails: subsidyDetails || undefined,
-      targetAudience: targetAudience || undefined,
-      benefits,
-      eligibility: eligibility || "सर्व पात्र नागरिक",
-      documentsRequired: documentsRequired || "आधार कार्ड, बँक पासबुक",
-      applicationProcess: applicationProcess || "ग्रामपंचायतीमध्ये संपर्क साधावा किंवा महाडीबीटी पोर्टलद्वारे अर्ज करावा.",
-      content: content || description,
-      externalLink: externalLink || undefined,
-      attachmentUrl,
-      attachmentName,
-      isActive: true,
-    };
+    let updatedScheme: any = null;
 
-    let updatedScheme = null;
-    if (id && id.match(/^[0-9a-fA-F]{24}$/)) {
-      updatedScheme = await Scheme.findByIdAndUpdate(id, payload, { new: true });
+    if (id) {
+      updatedScheme = await queryOne(
+        `UPDATE schemes
+         SET title = $1, slug = $2, category = $3, image_url = $4,
+             description = $5, subsidy_details = $6, target_audience = $7,
+             benefits = $8, eligibility = $9, documents_required = $10,
+             application_process = $11, content = $12, external_link = $13,
+             updated_at = NOW()
+         WHERE id::text = $14
+         RETURNING *`,
+        [
+          title,
+          slug,
+          category,
+          imageUrl,
+          description,
+          subsidyDetails || null,
+          targetAudience || null,
+          JSON.stringify(benefits),
+          eligibility || "सर्व पात्र नागरिक",
+          documentsRequired || "आधार कार्ड, बँक पासबुक",
+          applicationProcess || "ग्रामपंचायतीमध्ये संपर्क साधावा किंवा महाडीबीटी पोर्टलद्वारे अर्ज करावा.",
+          content || description,
+          externalLink || null,
+          id,
+        ]
+      );
     }
+
     if (!updatedScheme) {
-      updatedScheme = await Scheme.findOneAndUpdate({ slug }, payload, { upsert: true, new: true });
+      // Find village
+      const village = await queryOne("SELECT id, slug FROM villages LIMIT 1");
+      const vId = village?.id || null;
+      const vSlug = village?.slug || "komalwadi";
+
+      updatedScheme = await queryOne(
+        `INSERT INTO schemes (
+          village_id, village_slug, title, slug, category, image_url,
+          description, subsidy_details, target_audience, benefits,
+          eligibility, documents_required, application_process, content,
+          external_link, is_active
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, true)
+        ON CONFLICT (village_id, slug) DO UPDATE SET
+          title = EXCLUDED.title,
+          category = EXCLUDED.category,
+          image_url = EXCLUDED.image_url,
+          description = EXCLUDED.description,
+          subsidy_details = EXCLUDED.subsidy_details,
+          target_audience = EXCLUDED.target_audience,
+          benefits = EXCLUDED.benefits,
+          eligibility = EXCLUDED.eligibility,
+          documents_required = EXCLUDED.documents_required,
+          application_process = EXCLUDED.application_process,
+          content = EXCLUDED.content,
+          external_link = EXCLUDED.external_link,
+          updated_at = NOW()
+        RETURNING *`,
+        [
+          vId,
+          vSlug,
+          title,
+          slug,
+          category,
+          imageUrl,
+          description,
+          subsidyDetails || null,
+          targetAudience || null,
+          JSON.stringify(benefits),
+          eligibility || "सर्व पात्र नागरिक",
+          documentsRequired || "आधार कार्ड, बँक पासबुक",
+          applicationProcess || "ग्रामपंचायतीमध्ये संपर्क साधावा किंवा महाडीबीटी पोर्टलद्वारे अर्ज करावा.",
+          content || description,
+          externalLink || null,
+        ]
+      );
     }
 
     revalidatePath("/admin/schemes");
@@ -142,7 +150,10 @@ export async function saveScheme(formData: FormData) {
 
     return {
       success: true,
-      scheme: JSON.parse(JSON.stringify(updatedScheme)),
+      scheme: {
+        ...updatedScheme,
+        _id: (updatedScheme.id || updatedScheme._id).toString(),
+      },
     };
   } catch (error: any) {
     console.error("Error in saveScheme:", error);
@@ -152,9 +163,8 @@ export async function saveScheme(formData: FormData) {
 
 export async function deleteScheme(schemeId: string) {
   try {
-    await connectDB();
-    await Scheme.findByIdAndDelete(schemeId);
-
+    await requireAdminSession();
+    await dbQuery("DELETE FROM schemes WHERE id::text = $1", [schemeId]);
     revalidatePath("/admin/schemes");
     revalidatePath("/admin/dashboard");
     revalidatePath("/[villageSlug]", "layout");
@@ -167,27 +177,13 @@ export async function deleteScheme(schemeId: string) {
 
 export async function toggleSchemeStatus(schemeId: string) {
   try {
-    await connectDB();
-    let scheme = null;
-    if (schemeId && schemeId.match(/^[0-9a-fA-F]{24}$/)) {
-      scheme = await Scheme.findById(schemeId);
-    }
-
-    if (!scheme) {
-      const fallback = FALLBACK_SCHEMES.find((s) => s._id === schemeId || s.slug === schemeId);
-      if (fallback) {
-        scheme = await Scheme.create({
-          ...fallback,
-          villageSlug: "ALL",
-          isActive: false,
-        });
-      }
-    }
+    await requireAdminSession();
+    const scheme = await queryOne(
+      "UPDATE schemes SET is_active = NOT is_active, updated_at = NOW() WHERE id::text = $1 RETURNING *",
+      [schemeId]
+    );
 
     if (!scheme) return { success: false, error: "योजना सापडली नाही." };
-
-    scheme.isActive = !scheme.isActive;
-    await scheme.save();
 
     revalidatePath("/admin/schemes");
     revalidatePath("/admin/dashboard");
@@ -201,39 +197,49 @@ export async function toggleSchemeStatus(schemeId: string) {
 
 export async function seedDefaultSchemes() {
   try {
-    await connectDB();
-    const existing = await Scheme.countDocuments();
-
-    if (existing > 0) {
+    const countRes = await queryOne("SELECT COUNT(*) as count FROM schemes");
+    if (Number(countRes?.count || 0) > 0) {
       return { success: false, error: "शासकीय योजना डेटाबेसमध्ये आधीच उपलब्ध आहेत." };
     }
 
-    const docs = FALLBACK_SCHEMES.map((s) => ({
-      villageSlug: "ALL",
-      slug: s.slug,
-      title: s.title,
-      category: s.category,
-      imageUrl: s.imageUrl,
-      description: s.description,
-      subsidyDetails: s.subsidyDetails,
-      targetAudience: s.targetAudience,
-      benefits: s.benefits,
-      eligibility: s.eligibility,
-      documentsRequired: s.documentsRequired,
-      applicationProcess: s.applicationProcess,
-      content: s.content,
-      faq: s.faq,
-      externalLink: s.externalLink,
-      isActive: true,
-    }));
+    const village = await queryOne("SELECT id, slug FROM villages LIMIT 1");
+    const vId = village?.id || null;
+    const vSlug = village?.slug || "komalwadi";
 
-    await Scheme.insertMany(docs);
+    for (const s of FALLBACK_SCHEMES) {
+      await dbQuery(
+        `INSERT INTO schemes (
+          village_id, village_slug, slug, title, category, image_url,
+          description, subsidy_details, target_audience, benefits,
+          eligibility, documents_required, application_process, content,
+          external_link, is_active
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, true)
+        ON CONFLICT (village_id, slug) DO NOTHING`,
+        [
+          vId,
+          vSlug,
+          s.slug,
+          s.title,
+          s.category,
+          s.imageUrl,
+          s.description,
+          s.subsidyDetails || null,
+          s.targetAudience || null,
+          JSON.stringify(s.benefits || []),
+          s.eligibility || null,
+          s.documentsRequired || null,
+          s.applicationProcess || null,
+          s.content || null,
+          s.externalLink || null,
+        ]
+      );
+    }
 
     revalidatePath("/admin/schemes");
     revalidatePath("/admin/dashboard");
     revalidatePath("/[villageSlug]", "layout");
 
-    return { success: true, count: docs.length };
+    return { success: true, count: FALLBACK_SCHEMES.length };
   } catch (error: any) {
     console.error("Error seeding schemes:", error);
     return { success: false, error: error.message };

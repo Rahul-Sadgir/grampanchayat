@@ -366,7 +366,7 @@ export function ProjectManagerClient({ initialProjects, villages, selectedVillag
                     {p.location && (
                       <div className="p-2 bg-slate-50 rounded-xl border border-slate-100 col-span-2 sm:col-span-1">
                         <span className="text-slate-500 block text-[10px]">स्थान / वॉर्ड</span>
-                        <strong className="text-slate-800 text-xs truncate block">
+                        <strong className="text-slate-800 text-xs break-words leading-[1.4] block py-0.5">
                           {p.location}
                         </strong>
                       </div>

@@ -97,8 +97,8 @@ export default async function NoticesPage({ params }: Props) {
                 </p>
 
                 {n.documentUrl && (
-                  <div className="pt-2 border-t border-[#E5DEC9] flex items-center justify-between">
-                    <span className="text-xs text-[#526056] font-medium truncate">
+                  <div className="pt-2 border-t border-[#E5DEC9] flex items-center justify-between gap-2">
+                    <span className="text-xs text-[#526056] font-medium break-words leading-[1.4] min-w-0 flex-1 py-0.5">
                       {n.fileName || "अधिकृत परिपत्रक / PDF दस्तऐवज"}
                     </span>
                     <a

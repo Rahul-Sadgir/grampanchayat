@@ -1,35 +1,39 @@
 "use server";
 
-import { connectDB } from "@/lib/mongodb";
-import { Service } from "@/models/Service";
-import { Form } from "@/models/Form";
-import { Village } from "@/models/Village";
+import { queryOne, queryMany, dbQuery } from "@/lib/db";
 import { uploadFileBuffer } from "@/lib/cloudinary";
-import { getVillageBySlug, FALLBACK_SERVICES } from "@/lib/data-provider";
+import { getVillageBySlug } from "@/lib/data-provider";
 import { revalidatePath } from "next/cache";
+import { requireAdminSession } from "@/lib/auth";
 
 export async function getServicesAdmin(villageSlug?: string, tabCategory?: string) {
   try {
-    await connectDB();
+    const session = await requireAdminSession(villageSlug);
+    const targetSlug = session.role === "SUPER_ADMIN" ? villageSlug : session.villageSlug;
 
-    const query: any = {};
-    if (villageSlug && villageSlug !== "ALL") {
-      query.villageSlug = villageSlug;
+    const values: any[] = [];
+    const whereClauses: string[] = [];
+
+    if (targetSlug && targetSlug !== "ALL") {
+      values.push(targetSlug);
+      whereClauses.push(`LOWER(s.village_slug) = LOWER($${values.length})`);
     }
-    if (tabCategory && tabCategory !== "ALL") {
-      query.tabCategory = tabCategory;
-    }
 
-    const services = await Service.find(query)
-      .populate("villageId", "name slug")
-      .sort({ order: 1, createdAt: -1 })
-      .lean();
+    const whereSql = whereClauses.length > 0 ? `WHERE ${whereClauses.join(" AND ")}` : "";
+    const sql = `
+      SELECT s.*, v.name as village_name, v.slug as village_slug_resolved
+      FROM services s
+      LEFT JOIN villages v ON s.village_id = v.id
+      ${whereSql}
+      ORDER BY s.created_at ASC
+    `;
 
+    const services = await queryMany(sql, values);
     return services.map((s: any) => ({
       ...s,
-      _id: s._id.toString(),
-      villageId: s.villageId?._id ? s.villageId._id.toString() : (s.villageId ? s.villageId.toString() : ""),
-      villageName: s.villageId?.name || s.villageSlug || "—",
+      _id: (s.id || s._id).toString(),
+      villageId: (s.villageId || s.village_id || "").toString(),
+      villageName: s.villageName || s.villageSlug || "—",
     }));
   } catch (error) {
     console.error("[getServicesAdmin] Error:", error);
@@ -45,13 +49,23 @@ export interface SaveServiceResult {
 
 export async function saveServiceOrPdf(formData: FormData): Promise<SaveServiceResult> {
   try {
-    await connectDB();
+    const rawVillageSlug = (formData.get("villageSlug") as string) || "komalwadi";
+    const session = await requireAdminSession(rawVillageSlug);
+    const villageSlug = session.role === "SUPER_ADMIN" ? rawVillageSlug : session.villageSlug;
 
     const id = formData.get("id") as string | null;
-    const villageSlug = (formData.get("villageSlug") as string) || "komalwadi";
+
+    if (id) {
+      const existing = await queryOne("SELECT id, village_slug FROM services WHERE id::text = $1", [id]);
+      if (!existing) {
+        return { success: false, error: "सेवा सापडली नाही." };
+      }
+      if (session.role !== "SUPER_ADMIN" && existing.villageSlug?.toLowerCase() !== session.villageSlug.toLowerCase()) {
+        return { success: false, error: "प्रवेश नाकारला: अधिकार नाहीत." };
+      }
+    }
     const name = (formData.get("name") as string)?.trim();
     const description = (formData.get("description") as string)?.trim() || "";
-    const tabCategory = (formData.get("tabCategory") as any) || "aarz";
     const category = (formData.get("category") as string)?.trim() || "दाखले व अर्ज";
     const icon = (formData.get("icon") as string) || "FileText";
     const isPdfOnlyRaw = formData.get("isPdfOnly");
@@ -69,23 +83,25 @@ export async function saveServiceOrPdf(formData: FormData): Promise<SaveServiceR
     }
 
     // Generate safe slug
-    const generatedSlug = (formData.get("slug") as string)?.trim() ||
+    const generatedSlug =
+      (formData.get("slug") as string)?.trim() ||
       name.toLowerCase().replace(/[^a-z0-9]/gi, "-").replace(/-+/g, "-") ||
       `service-${Date.now()}`;
 
-    let dbVillage = await Village.findOne({ slug: villageSlug });
+    let dbVillage = await queryOne(
+      "SELECT * FROM villages WHERE LOWER(slug) = LOWER($1)",
+      [villageSlug]
+    );
+
     if (!dbVillage) {
       const vData = await getVillageBySlug(villageSlug);
       if (vData) {
-        dbVillage = await Village.create({
-          name: vData.name,
-          slug: vData.slug,
-          district: vData.district,
-          taluka: vData.taluka,
-          state: "महाराष्ट्र",
-          primaryColor: "#003625",
-          secondaryColor: "#9e4300",
-        });
+        dbVillage = await queryOne(
+          `INSERT INTO villages (name, slug, district, taluka, state, primary_color, secondary_color)
+           VALUES ($1, $2, $3, $4, $5, $6, $7)
+           RETURNING *`,
+          [vData.name, vData.slug, vData.district, vData.taluka, "महाराष्ट्र", "#003625", "#9e4300"]
+        );
       }
     }
 
@@ -108,85 +124,70 @@ export async function saveServiceOrPdf(formData: FormData): Promise<SaveServiceR
 
     let svc: any = null;
 
-    if (id && id.match(/^[0-9a-fA-F]{24}$/)) {
-      svc = await Service.findByIdAndUpdate(
-        id,
-        {
-          villageId: dbVillage._id,
-          villageSlug,
-          name,
-          slug: generatedSlug,
-          description,
-          category,
-          tabCategory,
-          icon,
-          isPdfOnly,
-          order,
-          ...(fileUrl ? { fileUrl, fileName } : {}),
-        },
-        { new: true }
+    if (id) {
+      svc = await queryOne(
+        `UPDATE services
+         SET village_id = $1, village_slug = $2, name = $3, slug = $4,
+             description = $5, category = $6, icon = $7,
+             is_pdf_only = $8, updated_at = NOW()
+         WHERE id::text = $9
+         RETURNING *`,
+        [dbVillage.id, villageSlug, name, generatedSlug, description, category, icon, isPdfOnly, id]
       );
     }
 
     if (!svc) {
-      svc = await Service.create({
-        villageId: dbVillage._id,
-        villageSlug,
-        name,
-        slug: generatedSlug,
-        description,
-        category,
-        tabCategory,
-        icon,
-        isPdfOnly,
-        order,
-        fileUrl,
-        fileName,
-        isActive: true,
-      });
+      svc = await queryOne(
+        `INSERT INTO services (village_id, village_slug, name, slug, description, category, icon, is_active)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, true)
+         RETURNING *`,
+        [dbVillage.id, villageSlug, name, generatedSlug, description, category, icon]
+      );
 
-      // If online service form, create default base form in Form collection
-      if (!isPdfOnly) {
-        await Form.create({
-          serviceId: svc._id,
-          villageId: dbVillage._id,
-          version: 1,
-          isActive: true,
-          schema: {
-            serviceName: name,
-            category: tabCategory,
-            fields: [
-              {
-                name: "applicantName",
-                label: "अर्जदाराचे संपूर्ण नाव",
-                type: "text",
-                required: true,
-                placeholder: "उदा. नाव आडनाव",
-              },
-              {
-                name: "mobileNumber",
-                label: "मोबाईल क्रमांक",
-                type: "tel",
-                required: true,
-                placeholder: "१० अंकी मोबाईल",
-              },
-              {
-                name: "address",
-                label: "संपूर्ण पत्ता",
-                type: "textarea",
-                required: true,
-                placeholder: "घर नं, गल्ली/वार्ड, गाव",
-              },
-              {
-                name: "purpose",
-                label: "अर्जाचे कारण / प्रयोजन",
-                type: "text",
-                required: true,
-                placeholder: "दाखला कशासाठी हवा आहे...",
-              },
-            ],
-          },
-        });
+      // If online service form, create default base form
+      if (svc && !isPdfOnly) {
+        await dbQuery(
+          `INSERT INTO forms (service_id, village_id, version, schema, is_active)
+           VALUES ($1, $2, 1, $3, true)`,
+          [
+            svc.id,
+            dbVillage.id,
+            JSON.stringify({
+              serviceName: name,
+              category: "दाखले",
+              fields: [
+                {
+                  name: "applicantName",
+                  label: "अर्जदाराचे संपूर्ण नाव",
+                  type: "text",
+                  required: true,
+                  placeholder: "उदा. नाव आडनाव",
+                },
+                {
+                  name: "mobileNumber",
+                  label: "मोबाईल क्रमांक",
+                  type: "tel",
+                  required: true,
+                  placeholder: "१० अंकी मोबाईल",
+                },
+                {
+                  name: "address",
+                  label: "संपूर्ण पत्ता",
+                  type: "textarea",
+                  required: true,
+                  placeholder: "घर नं, गल्ली/वार्ड, गाव",
+                },
+                {
+                  name: "purpose",
+                  label: "अर्जाचे कारण / प्रयोजन",
+                  type: "text",
+                  required: true,
+                  placeholder: "दाखला कशासाठी हवा आहे...",
+                },
+              ],
+            }),
+          ]
+        );
       }
     }
 
@@ -196,7 +197,7 @@ export async function saveServiceOrPdf(formData: FormData): Promise<SaveServiceR
 
     return {
       success: true,
-      service: JSON.parse(JSON.stringify(svc)),
+      service: svc,
     };
   } catch (error: any) {
     console.error("[saveServiceOrPdf] Error:", error);
@@ -209,16 +210,18 @@ export async function saveServiceOrPdf(formData: FormData): Promise<SaveServiceR
 
 export async function createCustomServiceAction(formData: FormData) {
   try {
-    await connectDB();
-    const villageId = formData.get("villageId") as string;
+    const session = await requireAdminSession();
+    const rawVillageId = formData.get("villageId") as string;
     const name = formData.get("name") as string;
     const slug = formData.get("slug") as string;
     const category = formData.get("category") as string;
     const description = formData.get("description") as string;
     const fieldsJson = formData.get("fieldsJson") as string;
 
-    const village = await Village.findById(villageId).lean();
+    const targetVillageParam = session.role === "SUPER_ADMIN" && rawVillageId ? rawVillageId : session.villageSlug;
+    const village = await queryOne("SELECT * FROM villages WHERE id::text = $1 OR slug = $1", [targetVillageParam]);
     const villageSlug = village ? village.slug : "komalwadi";
+    const vId = village ? village.id : null;
 
     let fields = [];
     try {
@@ -229,29 +232,28 @@ export async function createCustomServiceAction(formData: FormData) {
       ];
     }
 
-    const svc = await Service.create({
-      villageId,
-      villageSlug,
-      name,
-      slug,
-      category,
-      tabCategory: "aarz",
-      description,
-      isPdfOnly: false,
-      isActive: true,
-    });
+    const svc = await queryOne(
+      `INSERT INTO services (village_id, village_slug, name, slug, category, description, is_active)
+       VALUES ($1, $2, $3, $4, $5, $6, true)
+       RETURNING *`,
+      [vId, villageSlug, name, slug, category, description]
+    );
 
-    await Form.create({
-      serviceId: svc._id,
-      villageId,
-      version: 1,
-      isActive: true,
-      schema: {
-        serviceName: name,
-        category,
-        fields,
-      },
-    });
+    if (svc) {
+      await dbQuery(
+        `INSERT INTO forms (service_id, village_id, version, schema, is_active)
+         VALUES ($1, $2, 1, $3, true)`,
+        [
+          svc.id,
+          vId,
+          JSON.stringify({
+            serviceName: name,
+            category,
+            fields,
+          }),
+        ]
+      );
+    }
 
     revalidatePath("/admin/services");
     revalidatePath(`/${villageSlug}`);
@@ -266,10 +268,17 @@ export async function createCustomServiceAction(formData: FormData) {
 
 export async function deleteService(id: string) {
   try {
-    await connectDB();
-    const svc = await Service.findByIdAndDelete(id);
+    const session = await requireAdminSession();
+    const existing = await queryOne("SELECT id, village_slug FROM services WHERE id::text = $1", [id]);
+    if (!existing) {
+      return { success: false, error: "सेवा सापडली नाही." };
+    }
+    if (session.role !== "SUPER_ADMIN" && existing.villageSlug?.toLowerCase() !== session.villageSlug.toLowerCase()) {
+      return { success: false, error: "प्रवेश नाकारला: अधिकार नाहीत." };
+    }
+
+    const svc = await queryOne("DELETE FROM services WHERE id::text = $1 RETURNING *", [id]);
     if (svc) {
-      await Form.deleteMany({ serviceId: id });
       revalidatePath("/admin/services");
       revalidatePath(`/${svc.villageSlug}/services`);
     }
@@ -282,31 +291,20 @@ export async function deleteService(id: string) {
 
 export async function toggleServiceStatus(id: string, isActive: boolean) {
   try {
-    await connectDB();
-    let svc: any = null;
-    if (id && id.match(/^[0-9a-fA-F]{24}$/)) {
-      svc = await Service.findByIdAndUpdate(id, { isActive }, { new: true });
+    const session = await requireAdminSession();
+    const existing = await queryOne("SELECT id, village_slug FROM services WHERE id::text = $1", [id]);
+    if (!existing) {
+      return { success: false, error: "सेवा सापडली नाही." };
     }
-    if (!svc) {
-      const fallback: any = FALLBACK_SERVICES.find((f: any) => f._id === id || f.slug === id);
-      const defaultVillage = await Village.findOne({});
-      if (fallback && defaultVillage) {
-        svc = await Service.create({
-          villageId: defaultVillage._id,
-          villageSlug: defaultVillage.slug,
-          name: fallback.name,
-          slug: fallback.slug,
-          description: fallback.description,
-          category: fallback.category,
-          tabCategory: fallback.tabCategory || "aarz",
-          isPdfOnly: fallback.isPdfOnly || false,
-          fileUrl: fallback.fileUrl || "",
-          fileName: fallback.fileName || "",
-          order: fallback.order || 0,
-          isActive,
-        });
-      }
+    if (session.role !== "SUPER_ADMIN" && existing.villageSlug?.toLowerCase() !== session.villageSlug.toLowerCase()) {
+      return { success: false, error: "प्रवेश नाकारला: अधिकार नाहीत." };
     }
+
+    const svc = await queryOne(
+      "UPDATE services SET is_active = $1, updated_at = NOW() WHERE id::text = $2 RETURNING *",
+      [isActive, id]
+    );
+
     if (svc) {
       revalidatePath("/admin/services");
       revalidatePath("/admin/dashboard");

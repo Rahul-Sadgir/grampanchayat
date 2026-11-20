@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useId, useEffect } from "react";
+import { useState, useId } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
@@ -79,7 +79,8 @@ export function CitizenServicesTabbed({
   const resolvedTabConfig = getTabBySlugOrId(
     searchParams?.get("tab") || initialTab
   );
-  const [activeTabId, setActiveTabId] = useState<string>(resolvedTabConfig.id);
+  const tabParam = searchParams?.get("tab");
+  const activeTabId = tabParam ? getTabBySlugOrId(tabParam).id : resolvedTabConfig.id;
   const [searchQuery, setSearchQuery] = useState<string>(
     searchParams?.get("q") || initialQuery
   );
@@ -92,17 +93,7 @@ export function CitizenServicesTabbed({
     description?: string;
   } | null>(null);
 
-  // Sync state if URL query param changes
-  useEffect(() => {
-    const tabParam = searchParams?.get("tab");
-    if (tabParam) {
-      const tabConfig = getTabBySlugOrId(tabParam);
-      setActiveTabId(tabConfig.id);
-    }
-  }, [searchParams]);
-
   const handleTabChange = (cat: typeof CITIZEN_TABS[0]) => {
-    setActiveTabId(cat.id);
     const params = new URLSearchParams(searchParams?.toString() || "");
     params.set("tab", cat.slug);
     if (!searchQuery) params.delete("q");
@@ -231,7 +222,7 @@ export function CitizenServicesTabbed({
 
                 <span
                   className={`
-                    text-xs sm:text-sm truncate leading-none
+                    text-xs sm:text-sm whitespace-nowrap leading-[1.4] py-0.5
                     ${isActive ? "text-white font-extrabold" : "text-[#003625]"}
                   `}
                 >
@@ -317,7 +308,7 @@ export function CitizenServicesTabbed({
                       </div>
 
                       {/* Form Name Only */}
-                      <h4 className="font-extrabold text-sm sm:text-base text-[#003625] leading-snug truncate">
+                      <h4 className="font-extrabold text-sm sm:text-base text-[#003625] leading-[1.45] tracking-normal break-words py-0.5">
                         {svc.name}
                       </h4>
                     </div>
@@ -427,8 +418,8 @@ export function CitizenServicesTabbed({
                 <div className="w-9 h-9 rounded-xl bg-[#003625] text-white flex items-center justify-center shrink-0 shadow-xs">
                   <FileSpreadsheet className="w-4 h-4" />
                 </div>
-                <div className="min-w-0">
-                  <h4 className="font-extrabold text-sm sm:text-base text-[#003625] truncate">
+                <div className="min-w-0 flex-1 py-0.5">
+                  <h4 className="font-extrabold text-sm sm:text-base text-[#003625] break-words leading-[1.45] py-0.5">
                     {previewPdf.title}
                   </h4>
                   <div className="flex items-center gap-2 mt-0.5">

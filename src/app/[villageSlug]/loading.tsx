@@ -9,13 +9,14 @@ export default function VillageLoading() {
           <div className="absolute inset-0 rounded-full border-4 border-[#003625]/20 border-t-[#003625] animate-spin" />
           <div className="absolute inset-2 rounded-full border-4 border-[#9e4300]/20 border-b-[#9e4300] animate-spin [animation-duration:1.5s] [animation-direction:reverse]" />
           
-          <div className="relative w-11 h-11 rounded-full bg-white shadow-md p-1.5 flex items-center justify-center">
+          <div className="relative w-12 h-12 rounded-full bg-white shadow-md p-1 flex items-center justify-center">
             <Image
-              src="/images/emblem.webp"
-              alt="महाराष्ट्र शासन"
-              width={36}
-              height={36}
-              className="object-contain"
+              src="/images/grampanchayat-emblem.webp"
+              alt="महाराष्ट्र शासन ग्रामपंचायत अधिकृत बोधचिन्ह"
+              width={42}
+              height={42}
+              unoptimized
+              className="object-contain rounded-full"
             />
           </div>
         </div>

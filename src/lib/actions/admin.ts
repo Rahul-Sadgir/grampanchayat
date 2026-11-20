@@ -1,14 +1,8 @@
 "use server";
 
-import { connectDB } from "@/lib/mongodb";
-import { Application } from "@/models/Application";
-import "@/models/Village";
-import "@/models/Service";
+import { queryOne, dbQuery } from "@/lib/db";
 import { revalidatePath } from "next/cache";
-import fs from "fs/promises";
-import path from "path";
-
-import { uploadFileBuffer } from "@/lib/cloudinary";
+import { requireAdminSession } from "@/lib/auth";
 
 export async function updateApplicationStatus(
   applicationId: string,
@@ -16,23 +10,44 @@ export async function updateApplicationStatus(
   adminNotes?: string
 ) {
   try {
-    const conn = await connectDB();
-    if (!conn) {
-      return { success: false, error: "डेटाबेस सर्व्हरशी संपर्क होऊ शकला नाही." };
+    const session = await requireAdminSession();
+
+    // Check application ownership & village isolation (CWE-639)
+    const existing = await queryOne(
+      `SELECT id, village_slug FROM applications WHERE id::text = $1 OR application_number = $1`,
+      [applicationId]
+    );
+
+    if (!existing) {
+      return { success: false, error: "अर्ज सापडला नाही." };
     }
 
-    await Application.findByIdAndUpdate(applicationId, {
-      status: newStatus,
-      adminNotes: adminNotes ?? undefined,
-      completedAt: newStatus === "COMPLETED" ? new Date() : undefined,
-    });
+    if (
+      session.role !== "SUPER_ADMIN" &&
+      existing.villageSlug?.toLowerCase() !== session.villageSlug.toLowerCase()
+    ) {
+      return {
+        success: false,
+        error: "प्रवेश नाकारला: आपल्याकडे या गावाच्या अर्जावर प्रक्रिया करण्याचे अधिकार नाहीत. (403 Forbidden)",
+      };
+    }
+
+    await dbQuery(
+      `UPDATE applications 
+       SET status = $1, 
+           admin_notes = $2, 
+           completed_at = CASE WHEN $1 = 'COMPLETED' THEN NOW() ELSE completed_at END,
+           updated_at = NOW()
+       WHERE id::text = $3 OR application_number = $3`,
+      [newStatus, adminNotes ?? null, applicationId]
+    );
 
     revalidatePath("/admin/applications");
     revalidatePath(`/admin/applications/${applicationId}`);
     revalidatePath("/admin/dashboard");
     return { success: true };
   } catch (err: any) {
-    console.error("[updateApplicationStatus] Error:", err);
+    console.error("[updateApplicationStatus] PostgreSQL Error:", err);
     return { success: false, error: err.message || "स्थिती अद्यतनित करताना त्रुटी आली." };
   }
 }
@@ -42,8 +57,6 @@ export interface SendResponseResult {
   error?: string;
   whatsappUrl?: string;
   messageText?: string;
-  documentUrl?: string;
-  documentName?: string;
   status?: string;
 }
 
@@ -52,85 +65,66 @@ export async function sendApplicationWhatsAppResponse(
   formData: FormData
 ): Promise<SendResponseResult> {
   try {
-    await connectDB();
+    const session = await requireAdminSession();
 
-    const app = await Application.findById(applicationId)
-      .populate("villageId", "name slug")
-      .populate("serviceId", "name slug");
+    const app = await queryOne(
+      `SELECT a.*, v.name as village_name, v.slug as village_slug_resolved, s.name as service_name_resolved
+       FROM applications a
+       LEFT JOIN villages v ON a.village_id = v.id
+       LEFT JOIN services s ON a.service_id = s.id
+       WHERE a.id::text = $1 OR a.application_number = $1`,
+      [applicationId]
+    );
 
     if (!app) {
       return { success: false, error: "अर्ज सापडला नाही." };
     }
 
-    const newStatus = (formData.get("status") as string) || app.status || "COMPLETED";
-    const responseText = ((formData.get("responseText") as string) || "").trim();
-    const hostOrigin = (formData.get("hostOrigin") as string) || "";
-    const responseFile = formData.get("responseFile") as File | null;
-
-    let responseDocumentUrl = app.responseDocumentUrl || "";
-    let responseDocumentName = app.responseDocumentName || "";
-
-    // Handle document upload if file provided
-    if (responseFile && responseFile.size > 0) {
-      const villageSlug =
-        (app.villageId as any)?.slug || app.villageSlug || "general";
-
-      const rawName = responseFile.name || "certificate.pdf";
-      const arrayBuffer = await responseFile.arrayBuffer();
-      const buffer = Buffer.from(arrayBuffer);
-
-      const uploadResult = await uploadFileBuffer(buffer, {
-        folder: `responses/${villageSlug}`,
-        filename: rawName,
-        resourceType: "auto",
-      });
-
-      responseDocumentUrl = uploadResult.url;
-      responseDocumentName = rawName;
+    // Verify single-village access control (CWE-639)
+    if (
+      session.role !== "SUPER_ADMIN" &&
+      app.villageSlug?.toLowerCase() !== session.villageSlug.toLowerCase()
+    ) {
+      return {
+        success: false,
+        error: "प्रवेश नाकारला: आपल्याकडे या गावाच्या अर्जाचा प्रतिसाद पाठवण्याचे अधिकार नाहीत. (403 Forbidden)",
+      };
     }
 
-    // Determine response type
-    const responseType = responseDocumentUrl && responseText
-      ? "BOTH"
-      : responseDocumentUrl
-      ? "DOCUMENT"
-      : "MESSAGE";
+    const newStatus = (formData.get("status") as string) || app.status || "COMPLETED";
+    const responseText = ((formData.get("responseText") as string) || "").trim();
 
-    // Update Application record in MongoDB
-    await Application.findByIdAndUpdate(applicationId, {
-      status: newStatus,
-      adminNotes: responseText || undefined,
-      responseText: responseText || undefined,
-      responseDocumentUrl: responseDocumentUrl || undefined,
-      responseDocumentName: responseDocumentName || undefined,
-      responseType,
-      responseSentAt: new Date(),
-      completedAt: newStatus === "COMPLETED" ? new Date() : undefined,
-    });
+    // Update Application record in PostgreSQL (pure message response)
+    await dbQuery(
+      `UPDATE applications
+       SET status = $1,
+           admin_notes = $2,
+           response_text = $3,
+           response_type = 'MESSAGE',
+           response_sent_at = NOW(),
+           completed_at = CASE WHEN $1 = 'COMPLETED' THEN NOW() ELSE completed_at END,
+           updated_at = NOW()
+       WHERE id::text = $4 OR application_number = $4`,
+      [
+        newStatus,
+        responseText || null,
+        responseText || null,
+        applicationId,
+      ]
+    );
 
     // Build human-friendly Marathi WhatsApp message
-    const villageName = (app.villageId as any)?.name || "ग्रामपंचायत";
-    const serviceName = (app.serviceId as any)?.name || app.serviceName || "नागरिक सेवा";
+    const villageName = app.villageName || app.villageSlug || "ग्रामपंचायत";
+    const serviceName = app.serviceNameResolved || app.serviceName || "नागरिक सेवा";
     const applicantName = app.applicantName || "नागरिक";
     const applicationNumber = app.applicationNumber;
 
     let statusMarathi = "प्रक्रिया पूर्ण";
-    if (newStatus === "COMPLETED") statusMarathi = "✅ मंजूर व अधिकृत दाखला तयार (COMPLETED)";
+    if (newStatus === "COMPLETED") statusMarathi = "✅ अर्ज मंजूर व कार्यवाही पूर्ण (COMPLETED)";
     else if (newStatus === "APPROVED") statusMarathi = "✅ अर्ज मंजूर करण्यात आला आहे (APPROVED)";
     else if (newStatus === "DOCUMENTS_REQUIRED") statusMarathi = "⚠️ कागदपत्रांची पूर्तता आवश्यक (DOCUMENTS REQUIRED)";
     else if (newStatus === "REJECTED") statusMarathi = "❌ अर्ज नामंजूर / त्रुटी आढळली (REJECTED)";
     else if (newStatus === "UNDER_REVIEW") statusMarathi = "ℹ️ अर्जाची पडताळणी सुरू आहे (UNDER REVIEW)";
-
-    // Document download absolute URL if available
-    let docLinkText = "";
-    if (responseDocumentUrl) {
-      const fullDocUrl = responseDocumentUrl.startsWith("http")
-        ? responseDocumentUrl
-        : hostOrigin
-        ? `${hostOrigin}${responseDocumentUrl}`
-        : responseDocumentUrl;
-      docLinkText = `\n\n📄 *आपला अधिकृत दाखला / कागदपत्र डाउनलोड करा:*\n${fullDocUrl}`;
-    }
 
     const messageLines = [
       `🏛️ *ग्रामपंचायत ${villageName} - अधिकृत नागरिक सेवा पोर्टल*`,
@@ -146,10 +140,6 @@ export async function sendApplicationWhatsAppResponse(
       messageLines.push(`${responseText}`);
     }
 
-    if (docLinkText) {
-      messageLines.push(docLinkText);
-    }
-
     messageLines.push(``);
     messageLines.push(`कोणत्याही अधिक माहितीसाठी ग्रामपंचायत कार्यालयाशी संपर्क साधावा.`);
     messageLines.push(`- *ग्रामसेवक / सरपंच, ग्रामपंचायत ${villageName}*`);
@@ -157,7 +147,13 @@ export async function sendApplicationWhatsAppResponse(
     const fullMessage = messageLines.join("\n");
 
     // Clean 10-digit mobile number for WhatsApp Click-to-Chat URL
-    let cleanMobile = (app.mobileNumber || "").replace(/\D/g, "");
+    const rawMobile = String(app.mobileNumber || app.mobile_number || "");
+    const devanagariMap: { [key: string]: string } = {
+      "०": "0", "१": "1", "२": "2", "३": "3", "४": "4",
+      "५": "5", "६": "6", "७": "7", "८": "8", "९": "9",
+    };
+    const normalizedMobile = rawMobile.replace(/[०-९]/g, (d) => devanagariMap[d] || d);
+    let cleanMobile = normalizedMobile.replace(/\D/g, "");
     if (cleanMobile.length === 10) {
       cleanMobile = `91${cleanMobile}`;
     } else if (cleanMobile.startsWith("0") && cleanMobile.length === 11) {
@@ -176,8 +172,6 @@ export async function sendApplicationWhatsAppResponse(
       success: true,
       whatsappUrl,
       messageText: fullMessage,
-      documentUrl: responseDocumentUrl,
-      documentName: responseDocumentName,
       status: newStatus,
     };
   } catch (error: any) {

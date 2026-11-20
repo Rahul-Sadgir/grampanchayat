@@ -18,6 +18,7 @@ import {
   Megaphone,
   Users,
   Building,
+  Camera,
 } from "lucide-react";
 
 interface HeaderProps {
@@ -66,24 +67,26 @@ export function Header({ village }: HeaderProps) {
   }, []);
 
   const navItems = [
-    { label: "मुख्यपृष्ठ", href: `/${village.slug}`, exact: true },
-    { label: "नागरिक सेवा", href: `/${village.slug}/services`, exact: false },
-    { label: "बातम्या व सूचना", href: `/${village.slug}/notices`, exact: false },
-    { label: "शासकीय योजना", href: `/${village.slug}/schemes`, exact: false },
-    { label: "गावाचा विकास", href: `/${village.slug}/development`, exact: false },
-    { label: "गावाबद्दल", href: `/${village.slug}/about`, exact: false },
-    { label: "ग्रामपंचायत प्रतिनिधी", href: `/${village.slug}#representatives`, exact: false, isHash: true },
+    { label: "मुख्यपृष्ठ", href: "/", exact: true },
+    { label: "नागरिक सेवा", href: "/services", exact: false },
+    { label: "घडामोडी व उपक्रम", href: "/events", exact: false },
+    { label: "बातम्या व सूचना", href: "/notices", exact: false },
+    { label: "शासकीय योजना", href: "/schemes", exact: false },
+    { label: "गावाचा विकास", href: "/development", exact: false },
+    { label: "गावाबद्दल", href: "/about", exact: false },
+    { label: "ग्रामपंचायत प्रतिनिधी", href: "/#representatives", exact: false, isHash: true },
   ];
 
   const drawerItems = [
-    { label: "मुख्य पृष्ठ (Home)", href: `/${village.slug}`, exact: true, icon: Landmark },
-    { label: "नागरिक सेवा (Services)", href: `/${village.slug}/services`, exact: false, icon: ReceiptText },
-    { label: "कर आकारणी व भरणा (Taxation)", href: `/${village.slug}/services?tab=tax`, exact: false, icon: Coins },
-    { label: "शासकीय योजना (Schemes)", href: `/${village.slug}/schemes`, exact: false, icon: Sprout },
-    { label: "ग्रामसभा व जाहीर सूचना (Notices)", href: `/${village.slug}/notices`, exact: false, icon: Megaphone },
-    { label: "गावाचा विकास प्रकल्प (Development)", href: `/${village.slug}/development`, exact: false, icon: Construction },
-    { label: "पदाधिकारी व सदस्य (Members)", href: `/${village.slug}#representatives`, exact: false, icon: Users, isHash: true },
-    { label: "गावाबद्दल माहिती (About Village)", href: `/${village.slug}/about`, exact: false, icon: Building },
+    { label: "मुख्य पृष्ठ (Home)", href: "/", exact: true, icon: Landmark },
+    { label: "नागरिक सेवा (Services)", href: "/services", exact: false, icon: ReceiptText },
+    { label: "गावातील घडामोडी (Events & Posts)", href: "/events", exact: false, icon: Camera },
+    { label: "कर आकारणी व भरणा (Taxation)", href: "/services?tab=tax", exact: false, icon: Coins },
+    { label: "शासकीय योजना (Schemes)", href: "/schemes", exact: false, icon: Sprout },
+    { label: "ग्रामसभा व जाहीर सूचना (Notices)", href: "/notices", exact: false, icon: Megaphone },
+    { label: "गावाचा विकास प्रकल्प (Development)", href: "/development", exact: false, icon: Construction },
+    { label: "पदाधिकारी व सदस्य (Members)", href: "/#representatives", exact: false, icon: Users, isHash: true },
+    { label: "गावाबद्दल माहिती (About Village)", href: "/about", exact: false, icon: Building },
   ];
 
   return (
@@ -143,28 +146,29 @@ export function Header({ village }: HeaderProps) {
         {/* 2. MAIN CIVIC IDENTITY ROW */}
         <div className="max-w-6xl mx-auto px-4 py-2.5 sm:py-3 flex items-center justify-between gap-3">
           {/* Village Brand Identity with Emblem */}
-          <Link href={`/${village.slug}`} className="flex items-center gap-2.5 sm:gap-3 group min-w-0">
-            <div className="relative h-10 w-10 sm:h-12 sm:w-12 shrink-0 group-hover:scale-105 transition-transform flex items-center justify-center">
+          <Link href="/" className="flex items-center gap-2.5 sm:gap-3 group min-w-0">
+            <div className="relative h-11 w-11 sm:h-13 sm:w-13 shrink-0 group-hover:scale-105 transition-transform flex items-center justify-center">
               <Image
-                src="/images/emblem.webp"
+                src="/images/grampanchayat-emblem.webp"
                 alt="महाराष्ट्र शासन ग्रामपंचायत अधिकृत बोधचिन्ह"
-                width={48}
-                height={48}
+                width={52}
+                height={52}
                 priority
-                className="h-10 w-10 sm:h-12 sm:w-12 object-contain"
+                unoptimized
+                className="h-11 w-11 sm:h-13 sm:w-13 object-contain rounded-full shadow-xs"
               />
             </div>
 
-            <div className="min-w-0">
-              <div className="flex items-center gap-1.5">
-                <h1 className="font-extrabold text-[#003625] text-sm sm:text-lg md:text-xl tracking-tight leading-tight truncate">
+            <div className="min-w-0 py-0.5">
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <h1 className="font-extrabold text-[#003625] text-sm sm:text-lg md:text-xl tracking-normal leading-[1.4] break-words">
                   {village.name} ग्रामपंचायत
                 </h1>
-                <span className="text-[9px] uppercase font-bold px-1.5 py-0.5 rounded bg-[#F4EFE6] text-[#9e4300] border border-[#E5DEC9] hidden sm:inline-block">
+                <span className="text-[9px] uppercase font-bold px-1.5 py-0.5 rounded bg-[#F4EFE6] text-[#9e4300] border border-[#E5DEC9] hidden sm:inline-block leading-normal">
                   अधिकृत पोर्टल
                 </span>
               </div>
-              <p className="text-[10px] sm:text-xs text-[#526056] font-medium truncate">
+              <p className="text-[10px] sm:text-xs text-[#526056] font-medium leading-[1.4] mt-0.5 break-words">
                 ता. {village.taluka}, जि. {village.district} • आपलं गाव • आपल्या सेवा
               </p>
             </div>
@@ -179,7 +183,7 @@ export function Header({ village }: HeaderProps) {
                 className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#F4EFE6] text-[#9e4300] border border-[#E5DEC9] hover:bg-[#ebeef3] transition"
               >
                 <Phone className="w-4 h-4 text-[#9e4300]" />
-                <div className="text-left leading-tight">
+                <div className="text-left leading-[1.4] py-0.5">
                   <span className="text-[9px] text-[#526056] uppercase font-bold block">
                     नागरिक मदत कक्ष
                   </span>
@@ -228,8 +232,11 @@ export function Header({ village }: HeaderProps) {
                 const isActive = item.isHash
                   ? false
                   : item.exact
-                  ? pathname === item.href
-                  : pathname.startsWith(item.href);
+                  ? pathname === "/" || pathname === `/${village.slug}`
+                  : pathname === item.href ||
+                    pathname.startsWith(`${item.href}/`) ||
+                    pathname === `/${village.slug}${item.href}` ||
+                    pathname.startsWith(`/${village.slug}${item.href}/`);
 
                 return (
                   <Link
@@ -286,8 +293,11 @@ export function Header({ village }: HeaderProps) {
                 const isActive = item.isHash
                   ? false
                   : item.exact
-                  ? pathname === item.href
-                  : pathname.startsWith(item.href);
+                  ? pathname === "/" || pathname === `/${village.slug}`
+                  : pathname === item.href ||
+                    pathname.startsWith(`${item.href}/`) ||
+                    pathname === `/${village.slug}${item.href}` ||
+                    pathname.startsWith(`/${village.slug}${item.href}/`);
                 const IconComponent = item.icon;
 
 

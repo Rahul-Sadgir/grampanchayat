@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useState, useRef } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 
 export function TopProgressBar() {
@@ -8,16 +8,23 @@ export function TopProgressBar() {
   const searchParams = useSearchParams();
   const [loading, setLoading] = useState(false);
   const [progress, setProgress] = useState(0);
+  const loadingRef = useRef(false);
 
   // When pathname or searchParams change, navigation finished
   useEffect(() => {
-    if (loading) {
-      setProgress(100);
+    if (loadingRef.current) {
+      loadingRef.current = false;
+      const frame = requestAnimationFrame(() => {
+        setProgress(100);
+      });
       const timer = setTimeout(() => {
         setLoading(false);
         setProgress(0);
       }, 300);
-      return () => clearTimeout(timer);
+      return () => {
+        cancelAnimationFrame(frame);
+        clearTimeout(timer);
+      };
     }
   }, [pathname, searchParams]);
 
@@ -51,6 +58,7 @@ export function TopProgressBar() {
       const currentUrl = window.location.pathname + window.location.search;
       if (href === currentUrl) return;
 
+      loadingRef.current = true;
       setLoading(true);
       setProgress(25);
 

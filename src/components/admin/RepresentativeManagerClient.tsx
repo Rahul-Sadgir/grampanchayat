@@ -18,10 +18,17 @@ import {
   Building,
   Building2,
   RefreshCw,
+  Landmark,
+  Shield,
+  Check,
+  Info,
+  Calendar,
 } from "lucide-react";
 import {
   saveRepresentative,
   deleteRepresentative,
+  toggleVillageAdministrativeRule,
+  updateAdministratorDetails,
 } from "@/lib/actions/representatives";
 
 interface RepresentativeItem {
@@ -39,10 +46,21 @@ interface RepresentativeItem {
   term?: string;
 }
 
+interface GovernanceStatus {
+  isUnderAdministrativeRule: boolean;
+  administratorName: string;
+  administratorRole: string;
+  administratorPhone: string;
+  administratorEmail?: string;
+  administratorOrderDetails?: string;
+  administratorPhotoUrl?: string;
+}
+
 interface Props {
   initialRepresentatives: RepresentativeItem[];
   villages: { name: string; slug: string }[];
   selectedVillageSlug?: string;
+  initialGovernanceStatus?: GovernanceStatus;
 }
 
 const ROLES = [
@@ -59,6 +77,7 @@ export function RepresentativeManagerClient({
   initialRepresentatives,
   villages,
   selectedVillageSlug = "komalwadi",
+  initialGovernanceStatus,
 }: Props) {
   const defaultVillage =
     selectedVillageSlug && selectedVillageSlug !== "ALL"
@@ -70,7 +89,38 @@ export function RepresentativeManagerClient({
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingRep, setEditingRep] = useState<RepresentativeItem | null>(null);
 
-  // Form State
+  // Administrative Rule Governance State
+  const [isUnderRule, setIsUnderRule] = useState<boolean>(
+    Boolean(initialGovernanceStatus?.isUnderAdministrativeRule)
+  );
+  const [isTogglingRule, setIsTogglingRule] = useState(false);
+  const [isEditAdminModalOpen, setIsEditAdminModalOpen] = useState(false);
+  const [adminName, setAdminName] = useState(
+    initialGovernanceStatus?.administratorName || "श्री. आर. एस. पाटील"
+  );
+  const [adminRole, setAdminRole] = useState(
+    initialGovernanceStatus?.administratorRole || "शासन नियुक्त प्रशासक (विस्तार अधिकारी)"
+  );
+  const [adminPhone, setAdminPhone] = useState(
+    initialGovernanceStatus?.administratorPhone || "९८२३५५६६७७"
+  );
+  const [adminEmail, setAdminEmail] = useState(
+    initialGovernanceStatus?.administratorEmail || "gpkomalwadi@gmail.com"
+  );
+  const [adminOrderDetails, setAdminOrderDetails] = useState(
+    initialGovernanceStatus?.administratorOrderDetails ||
+      "महाराष्ट्र ग्रामपंचायत अधिनियम व जिल्हा परिषद आदेशानुसार कोमलवाडी ग्रामपंचायतीचा कारभार प्रशासकामार्फत चालविला जात आहे."
+  );
+  const [adminPhotoUrl, setAdminPhotoUrl] = useState(
+    initialGovernanceStatus?.administratorPhotoUrl || "/images/emblem.webp"
+  );
+  const [selectedAdminPhotoFile, setSelectedAdminPhotoFile] = useState<File | null>(null);
+  const [adminPhotoPreview, setAdminPhotoPreview] = useState(
+    initialGovernanceStatus?.administratorPhotoUrl || "/images/emblem.webp"
+  );
+  const [isSubmittingAdmin, setIsSubmittingAdmin] = useState(false);
+
+  // Member Form State
   const [name, setName] = useState("");
   const [role, setRole] = useState(ROLES[0]);
   const [villageSlug, setVillageSlug] = useState(defaultVillage);
@@ -88,6 +138,67 @@ export function RepresentativeManagerClient({
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const adminFileInputRef = useRef<HTMLInputElement>(null);
+
+  // Switch Rule Handler
+  const handleToggleRule = async () => {
+    setIsTogglingRule(true);
+    setErrorMsg(null);
+    try {
+      const nextVal = !isUnderRule;
+      const res = await toggleVillageAdministrativeRule(activeVillage, nextVal);
+      if (res.success) {
+        setIsUnderRule(nextVal);
+        setSuccessMsg(
+          nextVal
+            ? "ग्रामपंचायत यशस्वीरीत्या 'प्रशासकीय राजवट' मोडमध्ये बदलली! मुख्यपृष्ठावर 'प्रशासकीय राजवटीखालील ग्रामपंचायत' दिसेल."
+            : "ग्रामपंचायत यशस्वीरीत्या 'लोकप्रतिनिधी मंडळ' मोडमध्ये बदलली! मुख्यपृष्ठावर सरपंच व सदस्यांचे तपशील दिसतील."
+        );
+        setTimeout(() => setSuccessMsg(null), 4000);
+      } else {
+        setErrorMsg(res.error || "स्थिती बदलताना त्रुटी आली.");
+      }
+    } catch (err: any) {
+      setErrorMsg(err.message || "त्रुटी आली.");
+    } finally {
+      setIsTogglingRule(false);
+    }
+  };
+
+  // Submit Admin Details
+  const handleAdminDetailsSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmittingAdmin(true);
+    setErrorMsg(null);
+
+    try {
+      const formData = new FormData();
+      formData.append("villageSlug", activeVillage);
+      formData.append("isUnderAdministrativeRule", String(isUnderRule));
+      formData.append("name", adminName);
+      formData.append("role", adminRole);
+      formData.append("phone", adminPhone);
+      formData.append("email", adminEmail);
+      formData.append("orderDetails", adminOrderDetails);
+      formData.append("photoUrl", adminPhotoUrl);
+      if (selectedAdminPhotoFile) {
+        formData.append("photoFile", selectedAdminPhotoFile);
+      }
+
+      const res = await updateAdministratorDetails(formData);
+      if (res.success) {
+        setSuccessMsg("प्रशासक तपशील यशस्वीरीत्या जतन केले!");
+        setIsEditAdminModalOpen(false);
+        setTimeout(() => setSuccessMsg(null), 4000);
+      } else {
+        setErrorMsg(res.error || "जतन करताना त्रुटी आली.");
+      }
+    } catch (err: any) {
+      setErrorMsg(err.message || "त्रुटी आली.");
+    } finally {
+      setIsSubmittingAdmin(false);
+    }
+  };
 
   const openAddModal = () => {
     setEditingRep(null);
@@ -129,6 +240,15 @@ export function RepresentativeManagerClient({
       setSelectedPhotoFile(file);
       const url = URL.createObjectURL(file);
       setPhotoPreview(url);
+    }
+  };
+
+  const handleAdminPhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setSelectedAdminPhotoFile(file);
+      const url = URL.createObjectURL(file);
+      setAdminPhotoPreview(url);
     }
   };
 
@@ -208,27 +328,30 @@ export function RepresentativeManagerClient({
 
   return (
     <div className="space-y-6">
-      {/* Header Bar */}
+      {/* 1. Page Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900">
             ग्रामपंचायत पदाधिकारी व सदस्य व्यवस्थापन
           </h2>
           <p className="text-xs text-slate-500 mt-0.5">
-            सरपंच, उपसरपंच, ग्रामसेवक व वार्ड सदस्यांची नावे, संपर्क, कार्यकाळ व फोटो (Cloudinary) नियंत्रित करा.
+            लोकप्रतिनिधी किंवा प्रशासकीय राजवट यांपैकी चालू मोड निवडा आणि प्रतिनिधी/प्रशासक तपशील नियंत्रित करा.
           </p>
         </div>
 
-        <button
-          type="button"
-          onClick={openAddModal}
-          className="px-5 py-3 bg-emerald-800 hover:bg-emerald-900 text-white rounded-2xl text-xs font-bold transition shadow-sm active:scale-95 flex items-center gap-2 cursor-pointer"
-        >
-          <Plus className="w-4 h-4" />
-          <span>नवीन सदस्य / पदाधिकारी जोडा</span>
-        </button>
+        {!isUnderRule && (
+          <button
+            type="button"
+            onClick={openAddModal}
+            className="px-5 py-3 bg-emerald-800 hover:bg-emerald-900 text-white rounded-2xl text-xs font-bold transition shadow-sm active:scale-95 flex items-center gap-2 cursor-pointer"
+          >
+            <Plus className="w-4 h-4" />
+            <span>नवीन सदस्य / पदाधिकारी जोडा</span>
+          </button>
+        )}
       </div>
 
+      {/* Notifications */}
       {successMsg && (
         <div className="p-4 bg-emerald-50 border border-emerald-300 rounded-2xl text-emerald-900 text-xs font-bold flex items-center gap-2">
           <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
@@ -236,75 +359,227 @@ export function RepresentativeManagerClient({
         </div>
       )}
 
-      {/* Village Jurisdiction Badge (Single Village Admin) */}
-      <div className="bg-white p-4 rounded-3xl border border-slate-200 shadow-xs flex items-center justify-between flex-wrap gap-2">
-        <div className="flex items-center gap-2">
-          <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-            अधिकार क्षेत्र:
-          </span>
-          <span className="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-emerald-800 text-white shadow-xs flex items-center gap-1.5">
-            <Building2 className="w-3.5 h-3.5 text-emerald-300" />
-            <span>{villages.find((v) => v.slug === defaultVillage)?.name || "कोमलवाडी"} ग्रामपंचायत</span>
-          </span>
+      {errorMsg && (
+        <div className="p-4 bg-red-50 border border-red-300 rounded-2xl text-red-900 text-xs font-bold flex items-center gap-2">
+          <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
+          <span>{errorMsg}</span>
         </div>
-        <span className="text-xs font-bold text-slate-500">
-          एकूण पदाधिकारी व सदस्य: {filteredReps.length}
-        </span>
-      </div>
+      )}
 
-      {/* Representatives Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {filteredReps.length === 0 ? (
-          <div className="col-span-full py-16 bg-white rounded-3xl border border-slate-200 text-center space-y-3">
-            <Users className="w-10 h-10 text-slate-300 mx-auto" />
-            <p className="text-xs text-slate-500 font-medium">
-              या गावासाठी अद्याप कोणतीही पदाधिकारी नोंद नाही.
-            </p>
-            <button
-              type="button"
-              onClick={openAddModal}
-              className="px-4 py-2 bg-emerald-800 text-white rounded-xl text-xs font-bold hover:bg-emerald-900 transition"
-            >
-              पहिली नोंद जोडा
-            </button>
-          </div>
-        ) : (
-          filteredReps.map((rep) => {
-            const isLeader = rep.isSarpanch || rep.isUpasarpanch;
-            return (
-              <div
-                key={rep._id}
-                className={`bg-white rounded-3xl p-5 border transition-all hover:shadow-md flex flex-col justify-between ${
-                  rep.isSarpanch
-                    ? "border-amber-300 ring-2 ring-amber-400/20 shadow-xs"
-                    : rep.isUpasarpanch
-                    ? "border-emerald-300 shadow-xs"
-                    : "border-slate-200 shadow-2xs"
+      {/* 2. CRITICAL GOVERNANCE MODE SWITCH CARD */}
+      <div
+        className={`p-5 sm:p-6 rounded-3xl border-2 transition-all shadow-sm ${
+          isUnderRule
+            ? "bg-gradient-to-r from-amber-50 to-orange-50 border-amber-300 ring-2 ring-amber-400/20"
+            : "bg-gradient-to-r from-emerald-50/80 to-teal-50/60 border-emerald-300"
+        }`}
+      >
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="space-y-1.5 flex-1">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                ग्रामपंचायत कारभार मोड (Governance Mode)
+              </span>
+              <span
+                className={`px-3 py-1 rounded-full text-xs font-black shadow-2xs flex items-center gap-1.5 ${
+                  isUnderRule
+                    ? "bg-[#9e4300] text-white"
+                    : "bg-[#003625] text-white"
                 }`}
               >
-                <div className="space-y-3.5">
-                  {/* Top Badge & Village */}
-                  <div className="flex items-center justify-between gap-2">
-                    <span
-                      className={`px-2.5 py-1 rounded-full text-[10px] font-bold ${
-                        rep.isSarpanch
-                          ? "bg-amber-100 text-amber-900 border border-amber-300"
-                          : rep.isUpasarpanch
-                          ? "bg-emerald-100 text-emerald-900 border border-emerald-300"
-                          : "bg-slate-100 text-slate-700"
-                      }`}
-                    >
-                      {rep.role}
-                    </span>
+                {isUnderRule ? (
+                  <>
+                    <ShieldCheck className="w-3.5 h-3.5 text-[#F5D77F]" />
+                    <span>🏛️ प्रशासकीय राजवट सक्रिय (Administrative Rule)</span>
+                  </>
+                ) : (
+                  <>
+                    <Users className="w-3.5 h-3.5 text-emerald-300" />
+                    <span>👥 लोकप्रतिनिधी मंडळ सक्रिय (Elected Body)</span>
+                  </>
+                )}
+              </span>
+            </div>
 
-                    <span className="text-[11px] font-semibold text-slate-400">
-                      गाव: {rep.villageSlug}
-                    </span>
-                  </div>
+            <h3 className="text-base sm:text-lg font-black text-slate-900 leading-snug">
+              {isUnderRule
+                ? "ग्रामपंचायतीचा कारभार शासन नियुक्त प्रशासकामार्फत सुरू आहे"
+                : "ग्रामपंचायतीचा कारभार सरपंच व निर्वाचित सदस्यांमार्फत सुरू आहे"}
+            </h3>
 
-                  {/* Photo & Name */}
-                  <div className="flex items-center gap-3.5">
-                    <div className="relative w-14 h-14 rounded-2xl bg-slate-100 border border-slate-200 overflow-hidden shrink-0 flex items-center justify-center">
+            <p className="text-xs text-slate-600 max-w-2xl leading-relaxed">
+              {isUnderRule
+                ? "स्विच 'प्रशासकीय राजवट' वर असल्याने मुख्यपृष्ठावर 'प्रशासकीय राजवटीखालील ग्रामपंचायत - ग्रामपंचायतीचा कारभार शासन नियुक्त प्रशासकामार्फत चालविण्यात येत आहे.' असे ठळकपणे प्रदर्शित केले जात आहे."
+                : "स्विच 'लोकप्रतिनिधी' वर असल्याने मुख्यपृष्ठावर निवडून आलेले सरपंच, उपसरपंच व वार्ड सदस्यांचे फोटो व माहिती प्रदर्शित केली जात आहे."}
+            </p>
+          </div>
+
+          {/* Interactive Switch Button */}
+          <div className="flex flex-col items-center sm:items-end gap-2 shrink-0 w-full sm:w-auto pt-2 sm:pt-0">
+            <div className="flex items-center gap-3 bg-white p-2 sm:p-2.5 rounded-2xl border border-slate-200 shadow-xs">
+              <span
+                className={`text-xs font-bold cursor-pointer transition ${
+                  !isUnderRule ? "text-[#003625] font-black" : "text-slate-400"
+                }`}
+                onClick={() => isUnderRule && handleToggleRule()}
+              >
+                👥 लोकप्रतिनिधी
+              </span>
+
+              <button
+                type="button"
+                role="switch"
+                aria-checked={isUnderRule}
+                disabled={isTogglingRule}
+                onClick={handleToggleRule}
+                className={`relative inline-flex h-8 w-16 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none disabled:opacity-50 ${
+                  isUnderRule ? "bg-[#9e4300]" : "bg-[#003625]"
+                }`}
+                title="कारभार मोड बदला (Toggle Governance Mode)"
+              >
+                <span
+                  className={`pointer-events-none inline-block h-7 w-7 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out ${
+                    isUnderRule ? "translate-x-8" : "translate-x-0"
+                  }`}
+                />
+              </button>
+
+              <span
+                className={`text-xs font-bold cursor-pointer transition ${
+                  isUnderRule ? "text-[#9e4300] font-black" : "text-slate-400"
+                }`}
+                onClick={() => !isUnderRule && handleToggleRule()}
+              >
+                🏛️ प्रशासकीय राजवट
+              </span>
+            </div>
+
+            {isTogglingRule && (
+              <span className="text-[11px] text-slate-500 font-bold flex items-center gap-1 animate-pulse">
+                <RefreshCw className="w-3 h-3 animate-spin" />
+                <span>मोड अद्यतनित होत आहे...</span>
+              </span>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* 3. IF ADMINISTRATIVE RULE IS ACTIVE: SHOW ADMINISTRATOR PROFILE */}
+      {isUnderRule && (
+        <div className="bg-white rounded-3xl p-6 border-2 border-amber-300 shadow-sm space-y-5">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
+            <div className="flex items-center gap-2.5">
+              <div className="w-10 h-10 rounded-2xl bg-amber-100 text-[#9e4300] flex items-center justify-center shrink-0">
+                <Landmark className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="font-black text-slate-900 text-base">
+                  शासन नियुक्त प्रशासक माहिती (Administrator Profile)
+                </h3>
+                <p className="text-xs text-slate-500">
+                  ही माहिती मुख्यपृष्ठावर नागरिकांना अधिकृतपणे दर्शवली जात आहे.
+                </p>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setIsEditAdminModalOpen(true)}
+              className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-xs cursor-pointer"
+            >
+              <Edit2 className="w-3.5 h-3.5 text-[#F5D77F]" />
+              <span>प्रशासक तपशील संपादित करा</span>
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 flex items-center gap-3">
+              <div className="w-12 h-12 rounded-xl bg-white border border-slate-200 overflow-hidden relative shrink-0">
+                <Image
+                  src={adminPhotoUrl || "/images/emblem.webp"}
+                  alt="प्रशासक"
+                  fill
+                  className="object-cover"
+                />
+              </div>
+              <div>
+                <p className="text-[10px] text-slate-400 font-semibold uppercase">
+                  प्रशासकाचे नाव
+                </p>
+                <p className="font-extrabold text-slate-900 text-sm">{adminName}</p>
+                <p className="text-[11px] text-[#9e4300] font-bold">{adminRole}</p>
+              </div>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-1">
+              <p className="text-[10px] text-slate-400 font-semibold uppercase">
+                संपर्क तपशील
+              </p>
+              <p className="font-bold text-slate-800 flex items-center gap-1.5 font-mono">
+                <Phone className="w-3.5 h-3.5 text-emerald-600" />
+                <span>{adminPhone || "—"}</span>
+              </p>
+              <p className="text-slate-600 flex items-center gap-1.5 truncate">
+                <Mail className="w-3.5 h-3.5 text-slate-400" />
+                <span>{adminEmail || "—"}</span>
+              </p>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-1">
+              <p className="text-[10px] text-slate-400 font-semibold uppercase">
+                शासन आदेश / नियुक्ती शेरा
+              </p>
+              <p className="text-slate-700 leading-relaxed text-[11px] line-clamp-3">
+                {adminOrderDetails}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 4. ELECTED BODY / MEMBERS DIRECTORY */}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Users className="w-4 h-4 text-emerald-800" />
+            <h3 className="font-bold text-slate-900 text-sm sm:text-base">
+              {isUnderRule
+                ? "ग्रामपंचायत सदस्य यादी (सध्या प्रशासकीय राजवटीमुळे कार्यकाळ समाप्त)"
+                : "ग्रामपंचायत सरपंच, उपसरपंच व सदस्य यादी"}
+            </h3>
+          </div>
+          <span className="text-xs text-slate-500 font-mono">
+            एकूण नोंदणी: {filteredReps.length}
+          </span>
+        </div>
+
+        {/* Representatives Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {filteredReps.length === 0 ? (
+            <div className="col-span-full py-12 bg-white rounded-3xl border border-slate-200 text-center space-y-2">
+              <Users className="w-10 h-10 text-slate-300 mx-auto" />
+              <p className="text-xs text-slate-500 font-medium">
+                कोणताही सदस्य नोंदवलेला नाही.
+              </p>
+            </div>
+          ) : (
+            filteredReps.map((rep) => {
+              const isLead = rep.role === "सरपंच" || rep.isSarpanch;
+              const isSubLead = rep.role === "उपसरपंच" || rep.isUpasarpanch;
+
+              return (
+                <div
+                  key={rep._id}
+                  className={`bg-white rounded-2xl border p-4 sm:p-5 shadow-xs space-y-4 flex flex-col justify-between transition hover:shadow-md ${
+                    isLead
+                      ? "border-emerald-300 ring-2 ring-emerald-400/20"
+                      : isSubLead
+                      ? "border-amber-200"
+                      : "border-slate-200"
+                  }`}
+                >
+                  <div className="flex items-start gap-3.5">
+                    <div className="relative w-14 h-14 rounded-full bg-slate-100 border border-slate-200 overflow-hidden flex items-center justify-center font-black text-slate-700 text-lg shrink-0">
                       {rep.photoUrl ? (
                         <Image
                           src={rep.photoUrl}
@@ -313,123 +588,239 @@ export function RepresentativeManagerClient({
                           className="object-cover"
                         />
                       ) : (
-                        <Users className="w-6 h-6 text-slate-400" />
+                        rep.name.split(" ").slice(0, 2).map((w) => w[0]).join("") || "प"
                       )}
                     </div>
 
-                    <div className="min-w-0">
-                      <h4 className="font-extrabold text-slate-900 text-sm truncate">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span
+                          className={`px-2 py-0.5 rounded-full text-[10px] font-black ${
+                            isLead
+                              ? "bg-emerald-100 text-emerald-800"
+                              : isSubLead
+                              ? "bg-amber-100 text-amber-800"
+                              : "bg-slate-100 text-slate-700"
+                          }`}
+                        >
+                          {rep.role}
+                        </span>
+                        {rep.ward && (
+                          <span className="text-[10px] text-slate-500 font-mono">
+                            {rep.ward}
+                          </span>
+                        )}
+                      </div>
+
+                      <h4 className="font-extrabold text-sm text-slate-900 mt-1 truncate">
                         {rep.name}
                       </h4>
-                      {rep.ward && (
-                        <p className="text-[11px] text-slate-500 font-medium">
-                          {rep.ward}
+
+                      {rep.phone && (
+                        <p className="text-xs text-slate-500 font-mono mt-0.5 flex items-center gap-1">
+                          <Phone className="w-3 h-3 text-emerald-700" />
+                          <span>{rep.phone}</span>
                         </p>
                       )}
-                      <p className="text-[10px] text-slate-400">
-                        कार्यकाळ: {rep.term || "२०२२ - २०२७"}
-                      </p>
                     </div>
                   </div>
 
-                  {/* Contact Info */}
-                  <div className="space-y-1.5 pt-2 border-t border-slate-100 text-xs">
-                    {rep.phone && (
-                      <div className="flex items-center gap-2 text-slate-700">
-                        <Phone className="w-3.5 h-3.5 text-emerald-700 shrink-0" />
-                        <span className="font-mono">{rep.phone}</span>
-                      </div>
-                    )}
-                    {rep.email && (
-                      <div className="flex items-center gap-2 text-slate-500 truncate">
-                        <Mail className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                        <span className="truncate">{rep.email}</span>
-                      </div>
-                    )}
+                  {/* Actions */}
+                  <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => openEditModal(rep)}
+                      className="p-1.5 rounded-lg text-slate-600 hover:text-emerald-700 hover:bg-emerald-50 transition cursor-pointer"
+                      title="संपादित करा"
+                    >
+                      <Edit2 className="w-4 h-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDelete(rep._id, rep.name)}
+                      className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition cursor-pointer"
+                      title="हटवा"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
                   </div>
                 </div>
-
-                {/* Actions */}
-                <div className="flex items-center justify-end gap-2 pt-4 border-t border-slate-100 mt-4">
-                  <button
-                    type="button"
-                    onClick={() => openEditModal(rep)}
-                    className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition"
-                    title="संपादित करा"
-                  >
-                    <Edit2 className="w-3.5 h-3.5" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleDelete(rep._id, rep.name)}
-                    className="p-2 rounded-xl bg-red-50 hover:bg-red-100 text-red-600 transition"
-                    title="काढून टाका"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              </div>
-            );
-          })
-        )}
+              );
+            })
+          )}
+        </div>
       </div>
 
-      {/* Add / Edit Representative Modal */}
-      {isModalOpen && (
+      {/* 5. EDIT ADMINISTRATOR DETAILS MODAL */}
+      {isEditAdminModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/70 backdrop-blur-xs overflow-y-auto">
-          <div className="relative w-full max-w-xl bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden my-auto max-h-[92vh] flex flex-col">
-            {/* Modal Header */}
-            <div className="bg-gradient-to-r from-[#003625] to-emerald-900 text-white p-5 flex items-center justify-between gap-3 shrink-0">
+          <div className="relative w-full max-w-lg bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden my-auto flex flex-col">
+            <div className="bg-gradient-to-r from-[#9e4300] to-amber-900 text-white p-5 flex items-start justify-between gap-3 shrink-0">
               <div>
+                <div className="inline-flex items-center gap-1.5 text-xs font-bold text-[#F5D77F] mb-1">
+                  <Landmark className="w-3.5 h-3.5" />
+                  <span>प्रशासकीय राजवट तपशील</span>
+                </div>
                 <h3 className="text-lg font-extrabold text-white">
-                  {editingRep ? "पदाधिकारी माहिती संपादित करा" : "नवीन पदाधिकारी / सदस्य जोडा"}
+                  शासन नियुक्त प्रशासक माहिती बदला
                 </h3>
-                <p className="text-xs text-emerald-200/90 mt-0.5">
-                  सर्व माहिती ग्रामपंचायतीच्या सार्वजनिक पृष्ठावर दिसेल.
-                </p>
               </div>
-
               <button
                 type="button"
-                onClick={() => setIsModalOpen(false)}
-                className="p-1.5 rounded-full bg-white/10 hover:bg-white/20 text-white transition"
+                onClick={() => setIsEditAdminModalOpen(false)}
+                className="p-1.5 rounded-full bg-white/10 hover:bg-white/20 text-white transition cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            {/* Modal Body */}
-            <form
-              onSubmit={handleSubmit}
-              className="p-5 sm:p-6 space-y-4 overflow-y-auto flex-1 text-xs"
-            >
-              {errorMsg && (
-                <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-red-800 flex items-center gap-2 font-medium">
-                  <AlertCircle className="w-4 h-4 shrink-0 text-red-600" />
-                  <span>{errorMsg}</span>
-                </div>
-              )}
+            <form onSubmit={handleAdminDetailsSubmit} className="p-5 space-y-4 text-xs">
+              <div className="space-y-1">
+                <label className="block font-bold text-slate-800">
+                  प्रशासकाचे नाव (Administrator Name) *
+                </label>
+                <input
+                  type="text"
+                  value={adminName}
+                  onChange={(e) => setAdminName(e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-amber-500"
+                  required
+                />
+              </div>
 
-              {/* Village Selector & Role */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-bold text-slate-700 mb-1">
-                    ग्रामपंचायत अधिकार क्षेत्र
+              <div className="space-y-1">
+                <label className="block font-bold text-slate-800">
+                  पद / हुद्दा (Designation) *
+                </label>
+                <input
+                  type="text"
+                  value={adminRole}
+                  onChange={(e) => setAdminRole(e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-amber-500"
+                  required
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="block font-bold text-slate-800">
+                    मोबाईल क्रमांक (Phone)
                   </label>
-                  <div className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-xs font-bold text-slate-800 flex items-center gap-1.5">
-                    <Building2 className="w-3.5 h-3.5 text-emerald-700 shrink-0" />
-                    <span>{villages.find((v) => v.slug === defaultVillage)?.name || "कोमलवाडी"} ग्रामपंचायत</span>
-                  </div>
+                  <input
+                    type="text"
+                    value={adminPhone}
+                    onChange={(e) => setAdminPhone(e.target.value)}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs font-mono focus:ring-2 focus:ring-amber-500"
+                  />
                 </div>
 
-                <div>
-                  <label className="block font-bold text-slate-700 mb-1">
-                    पद / हुद्दा *
+                <div className="space-y-1">
+                  <label className="block font-bold text-slate-800">
+                    ईमेल (Email)
+                  </label>
+                  <input
+                    type="email"
+                    value={adminEmail}
+                    onChange={(e) => setAdminEmail(e.target.value)}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-amber-500"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <label className="block font-bold text-slate-800">
+                  शासन निर्णय / नियुक्ती आदेश व संदेश (Order Details)
+                </label>
+                <textarea
+                  rows={3}
+                  value={adminOrderDetails}
+                  onChange={(e) => setAdminOrderDetails(e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-amber-500 resize-none"
+                />
+              </div>
+
+              {/* Photo Upload */}
+              <div className="space-y-1 pt-2 border-t border-slate-200">
+                <label className="block font-bold text-slate-800">
+                  प्रशासकाचा फोटो किंवा शासकीय चिन्ह (Photo / Emblem)
+                </label>
+                <input
+                  ref={adminFileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleAdminPhotoChange}
+                  className="w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-amber-100 file:text-amber-900 hover:file:bg-amber-200 cursor-pointer"
+                />
+              </div>
+
+              <div className="pt-3 flex justify-end gap-2 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setIsEditAdminModalOpen(false)}
+                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl"
+                >
+                  रद्द करा
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmittingAdmin}
+                  className="px-5 py-2 bg-[#9e4300] hover:bg-[#833700] text-white font-bold rounded-xl shadow-xs"
+                >
+                  {isSubmittingAdmin ? "जतन होत आहे..." : "तपशील जतन करा"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* 6. ADD / EDIT MEMBER MODAL */}
+      {isModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/70 backdrop-blur-xs overflow-y-auto">
+          <div className="relative w-full max-w-lg bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden my-auto flex flex-col">
+            <div className="bg-gradient-to-r from-[#003625] to-emerald-900 text-white p-5 flex items-start justify-between gap-3 shrink-0">
+              <div>
+                <div className="inline-flex items-center gap-1.5 text-xs font-bold text-[#F5D77F] mb-1">
+                  <Users className="w-3.5 h-3.5" />
+                  <span>ग्रामपंचायत {villageSlug}</span>
+                </div>
+                <h3 className="text-lg font-extrabold text-white">
+                  {editingRep ? "सदस्य माहिती संपादित करा" : "नवीन सदस्य / पदाधिकारी जोडा"}
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsModalOpen(false)}
+                className="p-1.5 rounded-full bg-white/10 hover:bg-white/20 text-white transition cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmit} className="p-5 space-y-3.5 text-xs">
+              <div className="space-y-1">
+                <label className="block font-bold text-slate-800">
+                  पूर्ण नाव (Name) *
+                </label>
+                <input
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="उदा. श्री. ज्ञानदेव कांगणे"
+                  className="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-emerald-600"
+                  required
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="block font-bold text-slate-800">
+                    पद / भूमिका (Role) *
                   </label>
                   <select
                     value={role}
                     onChange={(e) => setRole(e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs font-semibold focus:ring-2 focus:ring-emerald-600 focus:outline-none bg-white"
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs bg-white focus:ring-2 focus:ring-emerald-600"
                   >
                     {ROLES.map((r) => (
                       <option key={r} value={r}>
@@ -438,159 +829,76 @@ export function RepresentativeManagerClient({
                     ))}
                   </select>
                 </div>
-              </div>
 
-              {/* Name */}
-              <div>
-                <label className="block font-bold text-slate-700 mb-1">
-                  संपूर्ण नाव (उदा. सौ. अलका साहेबराव भोर) *
-                </label>
-                <input
-                  type="text"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="उदा. श्री. / सौ. नाव..."
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-emerald-600 focus:outline-none font-medium"
-                  required
-                />
-              </div>
-
-              {/* Ward & Term */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-bold text-slate-700 mb-1">
-                    वार्ड क्र. / प्रभाग (लागू असल्यास)
+                <div className="space-y-1">
+                  <label className="block font-bold text-slate-800">
+                    वार्ड / प्रभाग (Ward)
                   </label>
                   <input
                     type="text"
                     value={ward}
                     onChange={(e) => setWard(e.target.value)}
-                    placeholder="उदा. वार्ड क्र. १"
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-emerald-600 focus:outline-none"
-                  />
-                </div>
-
-                <div>
-                  <label className="block font-bold text-slate-700 mb-1">
-                    कार्यकाळ
-                  </label>
-                  <input
-                    type="text"
-                    value={term}
-                    onChange={(e) => setTerm(e.target.value)}
-                    placeholder="२०२२ - २०२७"
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-emerald-600 focus:outline-none font-mono"
+                    placeholder="उदा. प्रभाग क्र. १"
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-emerald-600"
                   />
                 </div>
               </div>
 
-              {/* Phone & Email */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-bold text-slate-700 mb-1">
-                    मोबाईल क्रमांक
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="block font-bold text-slate-800">
+                    मोबाईल क्रमांक (Phone)
                   </label>
                   <input
                     type="text"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
-                    placeholder="उदा. ९८२३९७८४९२"
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-emerald-600 focus:outline-none font-mono"
+                    placeholder="उदा. 9890112233"
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs font-mono focus:ring-2 focus:ring-emerald-600"
                   />
                 </div>
 
-                <div>
-                  <label className="block font-bold text-slate-700 mb-1">
-                    ईमेल आयडी
+                <div className="space-y-1">
+                  <label className="block font-bold text-slate-800">
+                    कार्यकाळ (Term)
                   </label>
                   <input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="उदा. gpkomalwadi@gmail.com"
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-emerald-600 focus:outline-none"
+                    type="text"
+                    value={term}
+                    onChange={(e) => setTerm(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-emerald-600"
                   />
                 </div>
               </div>
 
-              {/* Photo Upload (Cloudinary) */}
-              <div>
-                <label className="block font-bold text-slate-700 mb-1">
-                  फोटो अपलोड करा (Cloudinary Storage)
-                </label>
-                <div className="flex items-center gap-4 bg-slate-50 p-3 rounded-2xl border border-slate-200">
-                  <div className="relative w-16 h-16 rounded-2xl bg-white border border-slate-300 overflow-hidden shrink-0 flex items-center justify-center">
-                    {photoPreview ? (
-                      <Image
-                        src={photoPreview}
-                        alt="Preview"
-                        fill
-                        className="object-cover"
-                      />
-                    ) : (
-                      <Users className="w-6 h-6 text-slate-400" />
-                    )}
-                  </div>
-
-                  <div className="flex-1 space-y-1">
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept="image/*"
-                      onChange={handlePhotoChange}
-                      className="hidden"
-                      id="rep-photo-input"
-                    />
-                    <label
-                      htmlFor="rep-photo-input"
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-slate-100 text-slate-800 border border-slate-300 rounded-xl font-bold text-xs cursor-pointer shadow-2xs transition"
-                    >
-                      <Upload className="w-3.5 h-3.5 text-emerald-700" />
-                      <span>फोटो निवडा</span>
-                    </label>
-                    <p className="text-[10px] text-slate-400">
-                      JPG, PNG किंवा WEBP फॉरमॅट (Max 5MB)
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Order index */}
-              <div>
-                <label className="block font-bold text-slate-700 mb-1">
-                  प्रदर्शन क्रम (Order - 1 = प्रथम)
+              {/* Photo Upload */}
+              <div className="space-y-1 pt-1">
+                <label className="block font-bold text-slate-800">
+                  फोटो अपलोड करा (Photo Upload - Cloudinary)
                 </label>
                 <input
-                  type="number"
-                  value={order}
-                  onChange={(e) => setOrder(Number(e.target.value))}
-                  className="w-24 px-3.5 py-2 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-emerald-600 focus:outline-none"
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handlePhotoChange}
+                  className="w-full text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-emerald-100 file:text-emerald-900 hover:file:bg-emerald-200 cursor-pointer"
                 />
               </div>
 
-              {/* Action Buttons */}
-              <div className="pt-3 flex items-center justify-end gap-2.5 border-t border-slate-100">
+              <div className="pt-3 flex justify-end gap-2 border-t border-slate-100">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold transition text-xs"
+                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl"
                 >
                   रद्द करा
                 </button>
-
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="px-6 py-2.5 bg-emerald-800 hover:bg-emerald-900 text-white font-bold rounded-xl text-xs transition shadow-sm active:scale-95 disabled:opacity-50 flex items-center gap-2"
+                  className="px-5 py-2 bg-[#003625] hover:bg-[#00261a] text-white font-bold rounded-xl shadow-xs"
                 >
-                  {isSubmitting ? (
-                    <>
-                      <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                      <span>सेव्ह होत आहे...</span>
-                    </>
-                  ) : (
-                    <span>{editingRep ? "बदल सेव्ह करा" : "जोडा"}</span>
-                  )}
+                  {isSubmitting ? "जतन होत आहे..." : "जतन करा"}
                 </button>
               </div>
             </form>

@@ -1,52 +1,40 @@
 "use server";
 
-import { connectDB } from "@/lib/mongodb";
-import { Project } from "@/models/Project";
-import { Village } from "@/models/Village";
+import { queryOne, queryMany, dbQuery } from "@/lib/db";
 import { uploadFileBuffer } from "@/lib/cloudinary";
 import { FALLBACK_PROJECTS } from "@/lib/data-provider";
 import { revalidatePath } from "next/cache";
+import { requireAdminSession } from "@/lib/auth";
 
 export async function getProjectsAdmin(villageSlug?: string) {
   try {
-    await connectDB();
-    let query: any = {};
-    if (villageSlug && villageSlug !== "ALL") {
-      const village = await Village.findOne({ slug: villageSlug }).lean();
-      if (village) {
-        query.$or = [{ villageId: village._id }, { villageSlug }];
-      }
+    const session = await requireAdminSession(villageSlug);
+    const targetSlug = session.role === "SUPER_ADMIN" ? villageSlug : session.villageSlug;
+
+    const values: any[] = [];
+    const whereClauses: string[] = [];
+
+    if (targetSlug && targetSlug !== "ALL") {
+      values.push(targetSlug);
+      whereClauses.push(`LOWER(p.village_slug) = LOWER($${values.length})`);
     }
 
-    let projects = await Project.find(query)
-      .populate("villageId", "name slug")
-      .sort({ createdAt: -1 })
-      .lean();
+    const whereSql = whereClauses.length > 0 ? `WHERE ${whereClauses.join(" AND ")}` : "";
+    const sql = `
+      SELECT p.*, v.name as village_name, v.slug as village_slug_resolved
+      FROM projects p
+      LEFT JOIN villages v ON p.village_id = v.id
+      ${whereSql}
+      ORDER BY p.created_at DESC
+    `;
 
-    if (projects.length === 0) {
-      const defaultVillage = await Village.findOne({});
-      if (defaultVillage) {
-        const docs = FALLBACK_PROJECTS.map((p) => ({
-          villageId: defaultVillage._id,
-          villageSlug: defaultVillage.slug || "komalwadi",
-          title: p.title,
-          category: p.category,
-          description: p.description,
-          status: p.status as "PLANNED" | "ONGOING" | "COMPLETED",
-          budget: p.budget,
-          startDate: p.startDate,
-          completionDate: p.completionDate,
-          images: [],
-        }));
-        await Project.insertMany(docs);
-        projects = await Project.find(query)
-          .populate("villageId", "name slug")
-          .sort({ createdAt: -1 })
-          .lean();
-      }
-    }
-
-    return JSON.parse(JSON.stringify(projects));
+    const projects = await queryMany(sql, values);
+    return projects.map((p: any) => ({
+      ...p,
+      _id: (p.id || p._id).toString(),
+      villageId: (p.villageId || p.village_id || "").toString(),
+      villageName: p.villageName || p.villageSlug || "—",
+    }));
   } catch (error) {
     console.error("Error in getProjectsAdmin:", error);
     return [];
@@ -55,10 +43,10 @@ export async function getProjectsAdmin(villageSlug?: string) {
 
 export async function saveProject(formData: FormData) {
   try {
-    await connectDB();
+    const rawVillageId = formData.get("villageId") as string;
+    const session = await requireAdminSession();
 
     const id = formData.get("id") as string | null;
-    const villageId = formData.get("villageId") as string;
     const title = formData.get("title") as string;
     const category = formData.get("category") as string;
     const description = formData.get("description") as string;
@@ -69,12 +57,27 @@ export async function saveProject(formData: FormData) {
     const location = formData.get("location") as string;
     const imageFile = formData.get("image") as File | null;
 
-    if (!villageId || !title || !category || !description) {
+    if (!title || !category || !description) {
       return { success: false, error: "कृपया सर्व आवश्यक माहिती भरा." };
     }
 
-    const village = await Village.findById(villageId).lean();
-    const villageSlug = village ? village.slug : "";
+    const villageSlug = session.role === "SUPER_ADMIN" && rawVillageId ? rawVillageId : session.villageSlug;
+    const village = await queryOne(
+      "SELECT * FROM villages WHERE id::text = $1 OR slug = $1 LIMIT 1",
+      [villageSlug]
+    );
+    const vId = village ? village.id : null;
+
+    // If updating, verify project belongs to session.villageSlug (CWE-639)
+    if (id) {
+      const existing = await queryOne("SELECT id, village_slug FROM projects WHERE id::text = $1", [id]);
+      if (!existing) {
+        return { success: false, error: "प्रकल्प सापडला नाही." };
+      }
+      if (session.role !== "SUPER_ADMIN" && existing.villageSlug?.toLowerCase() !== session.villageSlug.toLowerCase()) {
+        return { success: false, error: "प्रवेश नाकारला: हा प्रकल्प अद्यतनित करण्याचे अधिकार नाहीत." };
+      }
+    }
 
     let imageUrl = (formData.get("existingImageUrl") as string) || "";
 
@@ -89,31 +92,54 @@ export async function saveProject(formData: FormData) {
     }
 
     const images = imageUrl ? [imageUrl] : [];
+    const budget = budgetStr ? Number(budgetStr) : 0;
 
-    const budget = budgetStr ? Number(budgetStr) : undefined;
+    let updatedProject: any = null;
 
-    const payload = {
-      villageId,
-      villageSlug,
-      title: title.trim(),
-      category: category.trim(),
-      description: description.trim(),
-      status,
-      budget,
-      year: year ? year.trim() : undefined,
-      agency: agency ? agency.trim() : undefined,
-      location: location ? location.trim() : undefined,
-      images,
-      startDate: status !== "PLANNED" ? new Date() : undefined,
-      completionDate: status === "COMPLETED" ? new Date() : undefined,
-    };
-
-    let updatedProject = null;
-    if (id && id.match(/^[0-9a-fA-F]{24}$/)) {
-      updatedProject = await Project.findByIdAndUpdate(id, payload, { new: true });
+    if (id) {
+      updatedProject = await queryOne(
+        `UPDATE projects
+         SET title = $1, category = $2, description = $3, status = $4,
+             budget = $5, year = $6, agency = $7, location = $8,
+             images = $9, updated_at = NOW()
+         WHERE id::text = $10
+         RETURNING *`,
+        [
+          title.trim(),
+          category.trim(),
+          description.trim(),
+          status,
+          budget,
+          year ? year.trim() : null,
+          agency ? agency.trim() : null,
+          location ? location.trim() : null,
+          JSON.stringify(images),
+          id,
+        ]
+      );
     }
+
     if (!updatedProject) {
-      updatedProject = await Project.create(payload);
+      updatedProject = await queryOne(
+        `INSERT INTO projects (
+          village_id, village_slug, title, category, description, status,
+          budget, year, agency, location, images, start_date
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW())
+        RETURNING *`,
+        [
+          vId,
+          villageSlug,
+          title.trim(),
+          category.trim(),
+          description.trim(),
+          status,
+          budget,
+          year ? year.trim() : null,
+          agency ? agency.trim() : null,
+          location ? location.trim() : null,
+          JSON.stringify(images),
+        ]
+      );
     }
 
     revalidatePath("/admin/projects");
@@ -125,7 +151,7 @@ export async function saveProject(formData: FormData) {
 
     return {
       success: true,
-      project: JSON.parse(JSON.stringify(updatedProject)),
+      project: updatedProject,
     };
   } catch (error: any) {
     console.error("Error in saveProject:", error);
@@ -138,46 +164,32 @@ export async function updateProjectStatus(
   newStatus: "PLANNED" | "ONGOING" | "COMPLETED"
 ) {
   try {
-    await connectDB();
-    let updated: any = null;
-    if (projectId && projectId.match(/^[0-9a-fA-F]{24}$/)) {
-      updated = await Project.findByIdAndUpdate(
-        projectId,
-        {
-          status: newStatus,
-          completionDate: newStatus === "COMPLETED" ? new Date() : undefined,
-        },
-        { new: true }
-      ).populate("villageId", "slug");
+    const session = await requireAdminSession();
+
+    // Verify ownership
+    const existing = await queryOne("SELECT id, village_slug FROM projects WHERE id::text = $1", [projectId]);
+    if (!existing) {
+      return { success: false, error: "प्रकल्प सापडला नाही." };
+    }
+    if (session.role !== "SUPER_ADMIN" && existing.villageSlug?.toLowerCase() !== session.villageSlug.toLowerCase()) {
+      return { success: false, error: "प्रवेश नाकारला: हा प्रकल्प अद्यतनित करण्याचे अधिकार नाहीत." };
     }
 
-    if (!updated) {
-      const fallback = FALLBACK_PROJECTS.find((p: any) => p._id === projectId || p.title?.includes(projectId));
-      const defaultVillage = await Village.findOne({});
-      if (fallback && defaultVillage) {
-        updated = await Project.create({
-          villageId: defaultVillage._id,
-          villageSlug: defaultVillage.slug,
-          title: fallback.title,
-          category: fallback.category,
-          description: fallback.description,
-          status: newStatus,
-          budget: fallback.budget,
-          startDate: newStatus !== "PLANNED" ? new Date() : undefined,
-          completionDate: newStatus === "COMPLETED" ? new Date() : undefined,
-          images: [],
-        });
-      }
-    }
+    const updated = await queryOne(
+      `UPDATE projects
+       SET status = $1,
+           completion_date = CASE WHEN $1 = 'COMPLETED' THEN CURRENT_DATE ELSE completion_date END,
+           updated_at = NOW()
+       WHERE id::text = $2
+       RETURNING *`,
+      [newStatus, projectId]
+    );
 
     revalidatePath("/admin/projects");
     revalidatePath("/admin/dashboard");
-    if (updated?.villageId) {
-      const vSlug = (updated.villageId as any).slug || updated.villageSlug;
-      if (vSlug) {
-        revalidatePath(`/${vSlug}`);
-        revalidatePath(`/${vSlug}/development`);
-      }
+    if (updated?.villageSlug) {
+      revalidatePath(`/${updated.villageSlug}`);
+      revalidatePath(`/${updated.villageSlug}/development`);
     }
 
     return { success: true };
@@ -189,9 +201,18 @@ export async function updateProjectStatus(
 
 export async function deleteProject(projectId: string) {
   try {
-    await connectDB();
-    await Project.findByIdAndDelete(projectId);
+    const session = await requireAdminSession();
 
+    // Verify ownership
+    const existing = await queryOne("SELECT id, village_slug FROM projects WHERE id::text = $1", [projectId]);
+    if (!existing) {
+      return { success: false, error: "प्रकल्प सापडला नाही." };
+    }
+    if (session.role !== "SUPER_ADMIN" && existing.villageSlug?.toLowerCase() !== session.villageSlug.toLowerCase()) {
+      return { success: false, error: "प्रवेश नाकारला: हा प्रकल्प हटवण्याचे अधिकार नाहीत." };
+    }
+
+    await dbQuery("DELETE FROM projects WHERE id::text = $1", [projectId]);
     revalidatePath("/admin/projects");
     revalidatePath("/admin/dashboard");
     return { success: true };
@@ -203,36 +224,37 @@ export async function deleteProject(projectId: string) {
 
 export async function seedDefaultProjects(villageId: string, villageSlug: string) {
   try {
-    await connectDB();
-    const existing = await Project.countDocuments({
-      $or: [{ villageId }, { villageSlug }],
-    });
+    const village = await queryOne(
+      "SELECT * FROM villages WHERE id::text = $1 OR slug = $2 LIMIT 1",
+      [villageId, villageSlug]
+    );
+    const vId = village ? village.id : null;
+    const vSlug = village ? village.slug : "komalwadi";
 
-    if (existing > 0) {
+    const countRes = await queryOne(
+      "SELECT COUNT(*) as count FROM projects WHERE village_slug = $1",
+      [vSlug]
+    );
+    if (Number(countRes?.count || 0) > 0) {
       return { success: false, error: "या गावासाठी आधीच विकासकामे नोंदवलेली आहेत." };
     }
 
-    const docs = FALLBACK_PROJECTS.map((p) => ({
-      villageId,
-      villageSlug,
-      title: p.title,
-      category: p.category,
-      description: p.description,
-      status: p.status as "PLANNED" | "ONGOING" | "COMPLETED",
-      budget: p.budget,
-      startDate: p.startDate,
-      completionDate: p.completionDate,
-      images: [],
-    }));
-
-    await Project.insertMany(docs);
+    for (const p of FALLBACK_PROJECTS) {
+      await dbQuery(
+        `INSERT INTO projects (
+          village_id, village_slug, title, category, description, status,
+          budget, start_date, completion_date, images
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, '[]'::jsonb)`,
+        [vId, vSlug, p.title, p.category, p.description, p.status, p.budget, p.startDate, p.completionDate]
+      );
+    }
 
     revalidatePath("/admin/projects");
     revalidatePath("/admin/dashboard");
-    revalidatePath(`/${villageSlug}`);
-    revalidatePath(`/${villageSlug}/development`);
+    revalidatePath(`/${vSlug}`);
+    revalidatePath(`/${vSlug}/development`);
 
-    return { success: true, count: docs.length };
+    return { success: true, count: FALLBACK_PROJECTS.length };
   } catch (error: any) {
     console.error("Error seeding projects:", error);
     return { success: false, error: error.message };

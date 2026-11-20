@@ -1,32 +1,16 @@
-import { v2 as cloudinary, UploadApiResponse } from "cloudinary";
 import fs from "fs/promises";
 import path from "path";
 
-// Configure Cloudinary if environment variables exist
+// Only configure Cloudinary if USE_CLOUDINARY is explicitly true
 const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
 const apiKey = process.env.CLOUDINARY_API_KEY;
 const apiSecret = process.env.CLOUDINARY_API_SECRET;
 const cloudinaryUrl = process.env.CLOUDINARY_URL;
 
 export const isCloudinaryConfigured = Boolean(
-  cloudinaryUrl || (cloudName && apiKey && apiSecret)
+  process.env.USE_CLOUDINARY === "true" &&
+  (cloudinaryUrl || (cloudName && apiKey && apiSecret))
 );
-
-if (isCloudinaryConfigured) {
-  if (cloudinaryUrl) {
-    cloudinary.config({
-      cloudinary_url: cloudinaryUrl,
-      secure: true,
-    });
-  } else {
-    cloudinary.config({
-      cloud_name: cloudName,
-      api_key: apiKey,
-      api_secret: apiSecret,
-      secure: true,
-    });
-  }
-}
 
 export interface CloudinaryUploadOptions {
   folder: string;
@@ -43,7 +27,7 @@ export interface UploadResult {
 }
 
 /**
- * Uploads a file buffer to Cloudinary or falls back to local storage if Cloudinary is not configured.
+ * Uploads a file buffer directly to local storage (or Cloudinary if USE_CLOUDINARY=true).
  */
 export async function uploadFileBuffer(
   fileBuffer: Buffer,
@@ -53,13 +37,25 @@ export async function uploadFileBuffer(
 
   if (isCloudinaryConfigured) {
     try {
+      const { v2: cloudinary } = await import("cloudinary");
+      if (cloudinaryUrl) {
+        cloudinary.config({ cloudinary_url: cloudinaryUrl, secure: true });
+      } else {
+        cloudinary.config({
+          cloud_name: cloudName,
+          api_key: apiKey,
+          api_secret: apiSecret,
+          secure: true,
+        });
+      }
+
       const sanitizedName = filename
-        .replace(/\.[^/.]+$/, "") // strip extension
+        .replace(/\.[^/.]+$/, "")
         .replace(/[^a-zA-Z0-9_-]/g, "_");
 
       const publicId = `${sanitizedName}_${Date.now()}`;
 
-      const uploadResult = await new Promise<UploadApiResponse>((resolve, reject) => {
+      const uploadPromise = new Promise<any>((resolve, reject) => {
         const uploadStream = cloudinary.uploader.upload_stream(
           {
             folder: `gram-panchayat/${folder}`,
@@ -80,6 +76,12 @@ export async function uploadFileBuffer(
         uploadStream.end(fileBuffer);
       });
 
+      const timeoutPromise = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error("Cloudinary upload timeout")), 15000)
+      );
+
+      const uploadResult = await Promise.race([uploadPromise, timeoutPromise]);
+
       return {
         url: uploadResult.secure_url,
         publicId: uploadResult.public_id,
@@ -92,7 +94,7 @@ export async function uploadFileBuffer(
     }
   }
 
-  // Fallback to local storage
+  // Fast, bulletproof local disk storage in public/uploads/...
   const safeFilename = `${Date.now()}-${filename.replace(/[^a-zA-Z0-9._-]/g, "_")}`;
   const localRelativeDir = path.join("uploads", folder);
   const localTargetDir = path.join(process.cwd(), "public", localRelativeDir);

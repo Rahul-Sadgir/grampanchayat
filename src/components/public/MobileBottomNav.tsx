@@ -14,31 +14,31 @@ export function MobileBottomNav({ villageSlug }: Props) {
   const navItems = [
     {
       label: "मुख्य",
-      href: `/${villageSlug}`,
+      href: "/",
       icon: Home,
       exact: true,
     },
     {
       label: "सेवा",
-      href: `/${villageSlug}/services`,
+      href: "/services",
       icon: FileText,
       exact: false,
     },
     {
       label: "योजना",
-      href: `/${villageSlug}/schemes`,
+      href: "/schemes",
       icon: Sprout,
       exact: false,
     },
     {
       label: "सूचना",
-      href: `/${villageSlug}/notices`,
+      href: "/notices",
       icon: Bell,
       exact: false,
     },
     {
       label: "माहिती",
-      href: `/${villageSlug}/about`,
+      href: "/about",
       icon: Info,
       exact: false,
     },
@@ -49,8 +49,11 @@ export function MobileBottomNav({ villageSlug }: Props) {
       <div className="flex items-center justify-around h-16 px-2 max-w-md mx-auto">
         {navItems.map((item) => {
           const isActive = item.exact
-            ? pathname === item.href
-            : pathname.startsWith(item.href);
+            ? pathname === "/" || pathname === `/${villageSlug}`
+            : pathname === item.href ||
+              pathname.startsWith(`${item.href}/`) ||
+              pathname === `/${villageSlug}${item.href}` ||
+              pathname.startsWith(`/${villageSlug}${item.href}/`);
           const Icon = item.icon;
 
           return (
@@ -70,7 +73,7 @@ export function MobileBottomNav({ villageSlug }: Props) {
               >
                 <Icon className="w-5 h-5 stroke-[2.2]" />
               </div>
-              <span className="text-[10px] mt-0.5 leading-none">{item.label}</span>
+              <span className="text-[11px] mt-0.5 leading-[1.4] py-0.5">{item.label}</span>
             </Link>
           );
         })}

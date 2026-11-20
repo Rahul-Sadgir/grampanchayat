@@ -46,12 +46,15 @@ interface Props {
 
 const NOTICE_CATEGORIES = [
   "जाहिर सूचना",
+  "गावामध्ये काय घडत आहे (News / घडामोडी)",
+  "कोमलवाडीचा अभिमान (गाव अभिमान)",
   "ग्रामसभा नोटीस",
-  "निविदा (Tender)",
+  "पाणीपुरवठा नियोजन",
   "विकासकाम बातमी",
   "आरोग्य व लसीकरण",
   "कृषी कार्यशाळा",
   "कार्यक्रम व उत्सव",
+  "निविदा (Tender)",
 ];
 
 export function NoticeManagerClient({ initialNotices, villages, selectedVillageSlug }: Props) {
@@ -359,8 +362,8 @@ export function NoticeManagerClient({ initialNotices, villages, selectedVillageS
 
                 {/* Attached File */}
                 {n.documentUrl && (
-                  <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
-                    <span className="text-slate-500 font-medium truncate text-[11px]">
+                  <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs gap-2">
+                    <span className="text-slate-500 font-medium break-words leading-[1.4] text-[11px] min-w-0 flex-1 py-0.5">
                       {n.fileName || "परिपत्रक / PDF"}
                     </span>
                     <a

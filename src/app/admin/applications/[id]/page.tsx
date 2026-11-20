@@ -1,7 +1,4 @@
-import { connectDB } from "@/lib/mongodb";
-import { Application } from "@/models/Application";
-import "@/models/Village";
-import "@/models/Service";
+import { queryOne } from "@/lib/db";
 import { notFound, redirect } from "next/navigation";
 import { getAdminSession } from "@/lib/auth";
 import { updateApplicationStatus } from "@/lib/actions/admin";
@@ -37,25 +34,26 @@ export default async function ApplicationDetailPage({ params }: Props) {
   }
 
   const { id } = await params;
-  const conn = await connectDB();
 
   let app: any = null;
-  if (conn) {
-    try {
-      app = await Application.findById(id)
-        .populate("villageId", "name slug")
-        .populate("serviceId", "name slug")
-        .lean();
-    } catch (e) {
-      console.warn("[ApplicationDetailPage] Error finding application:", e);
-    }
+  try {
+    app = await queryOne(
+      `SELECT a.*, v.name as village_name, v.slug as village_slug_resolved, s.name as service_name_resolved
+       FROM applications a
+       LEFT JOIN villages v ON a.village_id = v.id
+       LEFT JOIN services s ON a.service_id = s.id
+       WHERE a.id::text = $1 OR a.application_number = $1`,
+      [id]
+    );
+  } catch (e) {
+    console.warn("[ApplicationDetailPage] Error finding application from PostgreSQL:", e);
   }
 
   if (!app) notFound();
 
   // Enforce single village access: admin can only access applications from their own village
-  const appVillageSlug = (app.villageId as any)?.slug || (app as any).villageSlug;
-  if (appVillageSlug && session.villageSlug && appVillageSlug !== session.villageSlug) {
+  const appVillageSlug = app.villageSlug || app.villageSlugResolved;
+  if (appVillageSlug && session.villageSlug && appVillageSlug.toLowerCase() !== session.villageSlug.toLowerCase()) {
     notFound();
   }
 
@@ -66,9 +64,23 @@ export default async function ApplicationDetailPage({ params }: Props) {
     await updateApplicationStatus(id, status, notes);
   }
 
-  const documents = (app.documents || []) as any[];
-  const villageName = (app.villageId as any)?.name || (app as any).villageSlug || "ग्रामपंचायत";
-  const serviceName = (app.serviceId as any)?.name || (app as any).serviceName || "दाखला / परवाना अर्ज";
+  const rawDocs = app.documents;
+  const documents: any[] = Array.isArray(rawDocs)
+    ? rawDocs
+    : typeof rawDocs === "string"
+    ? JSON.parse(rawDocs)
+    : [];
+
+  const rawFormData = app.formData;
+  const formDataObj: Record<string, any> =
+    rawFormData && typeof rawFormData === "object"
+      ? rawFormData
+      : typeof rawFormData === "string"
+      ? JSON.parse(rawFormData)
+      : {};
+
+  const villageName = app.villageName || app.villageSlug || "ग्रामपंचायत";
+  const serviceName = app.serviceNameResolved || app.serviceName || "दाखला / परवाना अर्ज";
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
@@ -98,7 +110,7 @@ export default async function ApplicationDetailPage({ params }: Props) {
 
       {/* Hero WhatsApp Response Workflow Component */}
       <ApplicationResponseManager
-        applicationId={id}
+        applicationId={(app.id || app._id).toString()}
         applicationNumber={app.applicationNumber}
         applicantName={app.applicantName}
         mobileNumber={app.mobileNumber}
@@ -180,10 +192,10 @@ export default async function ApplicationDetailPage({ params }: Props) {
             २. अर्जात नागरिकाने भरलेली माहिती (Form Responses)
           </h3>
           <div className="bg-slate-50 p-4 rounded-2xl space-y-2.5 text-xs border border-slate-200/80">
-            {Object.entries(app.formData || {}).length === 0 ? (
+            {Object.entries(formDataObj).length === 0 ? (
               <p className="text-slate-400 italic">कोणतीही अतिरिक्त माहिती नाही.</p>
             ) : (
-              Object.entries(app.formData || {}).map(([key, val]) => {
+              Object.entries(formDataObj).map(([key, val]) => {
                 if (typeof val === "object" && val !== null && "url" in val) {
                   const fileVal = val as { url: string; fileName?: string };
                   return (
@@ -201,11 +213,10 @@ export default async function ApplicationDetailPage({ params }: Props) {
                     </div>
                   );
                 }
-
                 return (
                   <div key={key} className="flex justify-between border-b border-slate-200/60 pb-1.5 last:border-b-0">
                     <span className="text-slate-500 font-medium capitalize">{key}:</span>
-                    <span className="font-bold text-slate-900 text-right">{String(val || "—")}</span>
+                    <span className="font-bold text-slate-800 text-right">{String(val || "—")}</span>
                   </div>
                 );
               })
@@ -213,47 +224,41 @@ export default async function ApplicationDetailPage({ params }: Props) {
           </div>
         </div>
 
-        {/* Uploaded Documents Attachments */}
+        {/* Uploaded Documents */}
         <div className="space-y-3 pt-2">
-          <div className="flex items-center justify-between">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">
-              ३. नागरिकाने जोडलेली अधिकृत कागदपत्रे (Attached Documents - {documents.length})
-            </h3>
-          </div>
-
+          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">
+            ३. सोबत जोडलेली अधिकृत कागदपत्रे ({documents.length})
+          </h3>
           {documents.length === 0 ? (
-            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 text-center text-xs text-slate-500">
-              या अर्जासोबत कोणतीही फाईल जोडलेली नाही.
+            <div className="bg-slate-50 p-4 rounded-2xl text-xs text-slate-400 border border-slate-200/80 text-center italic">
+              या अर्जासोबत कोणतीही अतिरिक्त कागदपत्रे जोडलेली नाहीत.
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {documents.map((doc, idx) => (
                 <div
                   key={idx}
-                  className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200 flex items-center justify-between gap-3 hover:bg-slate-100/80 transition"
+                  className="flex items-center justify-between p-3.5 rounded-2xl border border-slate-200 bg-slate-50/60 hover:bg-slate-50 transition"
                 >
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    <div className="w-9 h-9 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center shrink-0">
-                      <FileText className="w-4 h-4" />
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-xs font-bold text-slate-900 truncate">
-                        {doc.documentName}
+                  <div className="flex items-center gap-2.5 overflow-hidden">
+                    <FileText className="w-4 h-4 text-emerald-800 shrink-0" />
+                    <div className="truncate">
+                      <p className="font-bold text-xs text-slate-900 truncate">
+                        {doc.documentName || `कागदपत्र ${idx + 1}`}
                       </p>
-                      <p className="text-[10px] text-slate-500 font-mono">
-                        {doc.fileSize ? `${Math.round(doc.fileSize / 1024)} KB` : "कागदपत्र"}
+                      <p className="text-[10px] text-slate-400 font-mono">
+                        {doc.fileSize ? `${Math.round(doc.fileSize / 1024)} KB` : "फाइल"} • {doc.fileType?.split("/")[1]?.toUpperCase() || "PDF"}
                       </p>
                     </div>
                   </div>
-
                   <a
                     href={doc.fileUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="p-2 rounded-lg bg-white border border-slate-200 hover:bg-emerald-800 hover:text-white text-emerald-800 transition shrink-0"
-                    title="कागदपत्र उघडा / डाऊनलोड करा"
+                    className="p-2 rounded-xl bg-white border border-slate-200 text-emerald-800 hover:bg-emerald-50 transition shrink-0 shadow-xs"
+                    title="कागदपत्र पहा / डाउनलोड करा"
                   >
-                    <ExternalLink className="w-4 h-4" />
+                    <Download className="w-3.5 h-3.5" />
                   </a>
                 </div>
               ))}
@@ -261,50 +266,55 @@ export default async function ApplicationDetailPage({ params }: Props) {
           )}
         </div>
 
-        {/* Admin Review Action & Status Workflow */}
-        <form action={updateStatusAction} className="pt-4 border-t border-slate-100 space-y-4">
-          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">
-            ४. अंतर्गत स्थिती अद्यतन व शेरा (Internal Review)
+        {/* Internal Admin Status Update Form */}
+        <div className="pt-4 border-t border-slate-200">
+          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">
+            ४. कार्यालयीन शेरा व स्थिती अद्ययावत करा (Internal Review)
           </h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1.5">
-                नवीन स्थिती निवडा *
-              </label>
-              <select
-                name="status"
-                defaultValue={app.status}
-                className="w-full px-4 py-3 rounded-xl border border-slate-300 text-xs font-semibold focus:ring-2 focus:ring-emerald-600 focus:outline-none bg-white"
+          <form action={updateStatusAction} className="space-y-3 bg-slate-50 p-4 rounded-2xl border border-slate-200">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-[11px] font-bold text-slate-600 mb-1">
+                  अर्जाची स्थिती बदला
+                </label>
+                <select
+                  name="status"
+                  defaultValue={app.status}
+                  className="w-full text-xs font-medium rounded-xl border border-slate-200 p-2.5 bg-white text-slate-900 focus:ring-2 focus:ring-emerald-700/20 focus:border-emerald-700 outline-none"
+                >
+                  <option value="SUBMITTED">प्राप्त (SUBMITTED)</option>
+                  <option value="UNDER_REVIEW">तपासणी सुरू (UNDER_REVIEW)</option>
+                  <option value="DOCUMENTS_REQUIRED">कागदपत्रे प्रलंबित (DOCUMENTS_REQUIRED)</option>
+                  <option value="APPROVED">मंजूर (APPROVED)</option>
+                  <option value="COMPLETED">पूर्ण / दाखला जारी (COMPLETED)</option>
+                  <option value="REJECTED">नाकारले (REJECTED)</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-bold text-slate-600 mb-1">
+                  कार्यालयीन शेरा / टिप्पणी
+                </label>
+                <input
+                  type="text"
+                  name="adminNotes"
+                  defaultValue={app.adminNotes || ""}
+                  placeholder="उदा. कागदपत्रे अचूक आहेत..."
+                  className="w-full text-xs rounded-xl border border-slate-200 p-2.5 bg-white text-slate-900 focus:ring-2 focus:ring-emerald-700/20 focus:border-emerald-700 outline-none"
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-end pt-2">
+              <button
+                type="submit"
+                className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl transition shadow-xs"
               >
-                <option value="SUBMITTED">SUBMITTED (सादर)</option>
-                <option value="UNDER_REVIEW">UNDER_REVIEW (कागदपत्रे तपासणी सुरू)</option>
-                <option value="DOCUMENTS_REQUIRED">DOCUMENTS_REQUIRED (अपूर्ण कागदपत्रे / फेरजोडणी)</option>
-                <option value="DOCUMENTS_SUBMITTED">DOCUMENTS_SUBMITTED (कागदपत्रे सादर केली)</option>
-                <option value="APPROVED">APPROVED (मंजूर केला)</option>
-                <option value="COMPLETED">COMPLETED (दाखला / परवाना तयार)</option>
-                <option value="REJECTED">REJECTED (नाकारला)</option>
-              </select>
+                स्थिती जतन करा
+              </button>
             </div>
-            <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1.5">
-                ग्रामपंचायत अंतर्गत शेरा
-              </label>
-              <input
-                name="adminNotes"
-                defaultValue={app.adminNotes || ""}
-                placeholder="उदा. कागदपत्रे पडताळणी झाली आहे, दाखला तयार आहे."
-                className="w-full px-4 py-3 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-emerald-600 focus:outline-none"
-              />
-            </div>
-          </div>
-          <button
-            type="submit"
-            className="px-6 py-3 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-bold transition shadow-xs active:scale-95 flex items-center gap-2"
-          >
-            <CheckCircle2 className="w-4 h-4" />
-            <span>स्थिती अद्यतन करा</span>
-          </button>
-        </form>
+          </form>
+        </div>
       </div>
     </div>
   );

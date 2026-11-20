@@ -210,7 +210,7 @@ export function VillageGalleryManager({ villages }: Props) {
             </h3>
           </div>
           <p className="text-xs text-slate-500 mt-1">
-            'गावाबद्दल (About Village)' पृष्ठावरील निसर्गरम्य व ऐतिहासिक छायाचित्रे येथे संपादित करा, नवीन फोटो अपलोड करा किंवा मथळा (Caption) बदला.
+            &lsquo;गावाबद्दल (About Village)&rsquo; पृष्ठावरील निसर्गरम्य व ऐतिहासिक छायाचित्रे येथे संपादित करा, नवीन फोटो अपलोड करा किंवा मथळा (Caption) बदला.
           </p>
         </div>
 

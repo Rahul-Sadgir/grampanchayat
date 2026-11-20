@@ -1,9 +1,6 @@
 "use server";
 
-import { connectDB } from "@/lib/mongodb";
-import { Application } from "@/models/Application";
-import "@/models/Service";
-import "@/models/Village";
+import { queryOne } from "@/lib/db";
 
 export async function trackCitizenApplication(applicationNumber: string, mobileNumber: string) {
   if (!applicationNumber || !mobileNumber) {
@@ -11,31 +8,39 @@ export async function trackCitizenApplication(applicationNumber: string, mobileN
   }
 
   try {
-    const conn = await connectDB();
-    if (!conn) {
-      return { success: false, error: "डेटाबेस सर्व्हरशी संपर्क होऊ शकला नाही. कृपया थोड्या वेळाने प्रयत्न करा." };
-    }
+    const app = await queryOne(
+      `SELECT a.*, v.name as village_name, s.name as service_name_resolved
+       FROM applications a
+       LEFT JOIN villages v ON a.village_id = v.id
+       LEFT JOIN services s ON a.service_id = s.id
+       WHERE UPPER(a.application_number) = UPPER($1) 
+         AND a.mobile_number = $2`,
+      [applicationNumber.trim(), mobileNumber.trim()]
+    );
 
-    const application = await Application.findOne({
-      applicationNumber: applicationNumber.trim().toUpperCase(),
-      mobileNumber: mobileNumber.trim(),
-    }).populate("serviceId", "name").populate("villageId", "name");
-
-    if (!application) {
+    if (!app) {
       return { success: false, error: "नोंद सापडली नाही. कृपया अर्ज क्रमांक आणि मोबाईल नंबर तपासा." };
     }
+
+    const rawFormData = app.formData;
+    const formDataObj =
+      rawFormData && typeof rawFormData === "object"
+        ? rawFormData
+        : typeof rawFormData === "string"
+        ? JSON.parse(rawFormData)
+        : {};
 
     return {
       success: true,
       data: {
-        applicationNumber: application.applicationNumber,
-        applicantName: application.applicantName,
-        serviceName: (application.serviceId as any)?.name || "शासकीय सेवा",
-        villageName: (application.villageId as any)?.name || "ग्रामपंचायत",
-        status: application.status,
-        submittedAt: application.submittedAt.toISOString(),
-        adminNotes: application.adminNotes || null,
-        formData: application.formData,
+        applicationNumber: app.applicationNumber,
+        applicantName: app.applicantName,
+        serviceName: app.serviceNameResolved || app.serviceName || "शासकीय सेवा",
+        villageName: app.villageName || "ग्रामपंचायत",
+        status: app.status,
+        submittedAt: app.submittedAt ? new Date(app.submittedAt).toISOString() : new Date().toISOString(),
+        adminNotes: app.adminNotes || null,
+        formData: formDataObj,
       },
     };
   } catch (err) {

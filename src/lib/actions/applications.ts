@@ -1,16 +1,11 @@
 "use server";
 
-import { connectDB } from "@/lib/mongodb";
-import { Village } from "@/models/Village";
-import { Service } from "@/models/Service";
-import { Form } from "@/models/Form";
-import { Application, IDocumentMeta } from "@/models/Application";
+import { queryOne, queryMany, dbQuery } from "@/lib/db";
 import { FormSchemaDefinition } from "@/types/form";
 import { getServiceAndForm, getVillageBySlug } from "@/lib/data-provider";
 import { revalidatePath } from "next/cache";
 import fs from "fs/promises";
 import path from "path";
-
 import { uploadFileBuffer } from "@/lib/cloudinary";
 
 export interface SubmitResult {
@@ -20,6 +15,14 @@ export interface SubmitResult {
   serviceName?: string;
   submittedAt?: string;
   error?: string;
+}
+
+export interface IDocumentMeta {
+  documentName: string;
+  fileUrl: string;
+  fileType: string;
+  fileSize: number;
+  uploadedAt: Date;
 }
 
 const ALLOWED_MIME_TYPES = new Set([
@@ -38,16 +41,46 @@ export async function submitCitizenApplication(
   formDataPayload: FormData
 ): Promise<SubmitResult> {
   try {
-    const applicantName = (formDataPayload.get("applicantName") as string)?.trim();
-    const mobileNumber = (formDataPayload.get("mobileNumber") as string)?.trim();
+    // 1. Validate slugs against path traversal & injection
+    const SLUG_REGEX = /^[a-z0-9_-]{1,64}$/i;
+    const safeVillageSlug = SLUG_REGEX.test(villageSlug) ? villageSlug.toLowerCase() : "komalwadi";
+    const safeServiceSlug = SLUG_REGEX.test(serviceSlug) ? serviceSlug.toLowerCase() : "";
+
+    if (!safeServiceSlug) {
+      return { success: false, error: "अवैध किंवा अनुपलब्ध सेवेचा प्रकार." };
+    }
+
+    const applicantName = (formDataPayload.get("applicantName") as string)?.trim() || "";
+    let mobileNumber = (formDataPayload.get("mobileNumber") as string)?.trim() || "";
     const email = (formDataPayload.get("email") as string)?.trim() || "";
-    const address = (formDataPayload.get("address") as string)?.trim();
+    const address = (formDataPayload.get("address") as string)?.trim() || "";
+
+    // 2. Enforce strict input bounds (DoS & ReDoS prevention)
+    if (applicantName.length > 200) {
+      return { success: false, error: "अर्जदाराचे नाव कमाल २०० अक्षरांचे असावे." };
+    }
+    if (email && email.length > 254) {
+      return { success: false, error: "ईमेल कमाल २५४ अक्षरांचा असावा." };
+    }
+    if (address.length > 1000) {
+      return { success: false, error: "पत्ता कमाल १००० अक्षरांचा असावा." };
+    }
+
+    // Normalize Marathi numerals to English digits
+    const marathiDigits = ["०", "१", "२", "३", "४", "५", "६", "७", "८", "९"];
+    marathiDigits.forEach((d, idx) => {
+      mobileNumber = mobileNumber.replaceAll(d, String(idx));
+    });
+    mobileNumber = mobileNumber.replace(/\D/g, "");
+    if (mobileNumber.startsWith("91") && mobileNumber.length === 12) {
+      mobileNumber = mobileNumber.substring(2);
+    }
 
     if (!applicantName) {
       return { success: false, error: "कृपया अर्जदाराचे संपूर्ण नाव प्रविष्ट करा." };
     }
 
-    if (!mobileNumber || !/^[0-9]{10}$/.test(mobileNumber)) {
+    if (!mobileNumber || mobileNumber.length !== 10) {
       return { success: false, error: "कृपया वैध १० अंकी मोबाईल क्रमांक प्रविष्ट करा." };
     }
 
@@ -55,40 +88,60 @@ export async function submitCitizenApplication(
       return { success: false, error: "कृपया अर्जदाराचा संपूर्ण पत्ता प्रविष्ट करा." };
     }
 
-    // Connect to DB and fetch village and service
+    // Connect to PostgreSQL and fetch village, service, and form
     let village: any = null;
     let service: any = null;
     let activeForm: any = null;
     let formConfig: FormSchemaDefinition | null = null;
 
     try {
-      const conn = await connectDB();
-      if (conn) {
-        village = await Village.findOne({ slug: villageSlug });
-        if (village) {
-          service = await Service.findOne({
-            villageId: village._id,
-            slug: serviceSlug,
-            isActive: true,
-          });
-          if (service) {
-            activeForm = await Form.findOne({
-              serviceId: service._id,
-              isActive: true,
-            }).sort({ version: -1 });
-            if (activeForm) {
-              formConfig = activeForm.schema as FormSchemaDefinition;
-            }
+      village = await queryOne(
+        "SELECT * FROM villages WHERE LOWER(slug) = LOWER($1)",
+        [villageSlug]
+      );
+
+      if (!village) {
+        village = await queryOne("SELECT * FROM villages LIMIT 1");
+      }
+
+      if (village) {
+        service = await queryOne(
+          `SELECT * FROM services 
+           WHERE LOWER(slug) = LOWER($1) 
+             AND (village_id = $2 OR LOWER(village_slug) = LOWER($3))
+             AND is_active = true`,
+          [serviceSlug, village.id, villageSlug]
+        );
+
+        if (!service) {
+          service = await queryOne(
+            "SELECT * FROM services WHERE LOWER(slug) = LOWER($1) AND is_active = true LIMIT 1",
+            [serviceSlug]
+          );
+        }
+
+        if (service) {
+          activeForm = await queryOne(
+            `SELECT * FROM forms 
+             WHERE service_id = $1 AND is_active = true 
+             ORDER BY version DESC LIMIT 1`,
+            [service.id]
+          );
+          if (activeForm && activeForm.schema) {
+            formConfig =
+              typeof activeForm.schema === "string"
+                ? JSON.parse(activeForm.schema)
+                : activeForm.schema;
           }
         }
       }
     } catch (dbErr) {
-      console.warn("[Applications] Database lookup failed, using fallback schema provider:", dbErr);
+      console.warn("[Applications] Database lookup failed, using fallback:", dbErr);
     }
 
     // Fallback schema if not found in DB
     if (!formConfig) {
-      const fallbackData = await getServiceAndForm(village?._id || villageSlug, serviceSlug);
+      const fallbackData = await getServiceAndForm(village?.id || villageSlug, serviceSlug);
       formConfig = fallbackData.schema;
       if (!service && fallbackData.service) {
         service = fallbackData.service;
@@ -96,20 +149,29 @@ export async function submitCitizenApplication(
     }
 
     if (!village) {
-      const fallbackVillage = await getVillageBySlug(villageSlug);
-      village = fallbackVillage || { _id: "65f000000000000000000001", slug: villageSlug, name: villageSlug };
+      village = await queryOne("SELECT * FROM villages LIMIT 1");
     }
 
     const dynamicData: Record<string, any> = {};
     const uploadedDocuments: IDocumentMeta[] = [];
 
-    // Ensure upload directory exists
-    const uploadDir = path.join(process.cwd(), "public", "uploads", "applications", villageSlug);
-    await fs.mkdir(uploadDir, { recursive: true });
+    // Ensure upload directory exists for local fallback with directory traversal containment
+    const uploadDir = path.resolve(process.cwd(), "public", "uploads", "applications", safeVillageSlug);
+    const parentUploadDir = path.resolve(process.cwd(), "public", "uploads", "applications");
+    if (uploadDir.startsWith(parentUploadDir)) {
+      try {
+        await fs.mkdir(uploadDir, { recursive: true });
+      } catch {}
+    }
 
     if (formConfig && formConfig.fields) {
       for (const field of formConfig.fields) {
-        if (field.name === "applicantName" || field.name === "mobileNumber" || field.name === "email" || field.name === "address") {
+        if (
+          field.name === "applicantName" ||
+          field.name === "mobileNumber" ||
+          field.name === "email" ||
+          field.name === "address"
+        ) {
           continue;
         }
 
@@ -137,10 +199,13 @@ export async function submitCitizenApplication(
               };
             }
 
+            // Sanitize filename to prevent directory traversal
+            const safeFileName = (file.name || "document.pdf").replace(/[^a-zA-Z0-9._-]/g, "_");
+
             const buffer = Buffer.from(await file.arrayBuffer());
             const uploadResult = await uploadFileBuffer(buffer, {
-              folder: `applications/${villageSlug}`,
-              filename: file.name || "document.pdf",
+              folder: `applications/${safeVillageSlug}`,
+              filename: safeFileName,
               resourceType: "auto",
             });
 
@@ -176,93 +241,61 @@ export async function submitCitizenApplication(
       }
     }
 
-    // Generate unique Application ID: GUL-CONST-2026-000001
+    // Generate unique Application ID: KOM-CONST-2026-000001
     const prefix = (village.slug || villageSlug).substring(0, 3).toUpperCase();
     const serviceCode = (service?.slug || serviceSlug).substring(0, 5).toUpperCase();
     let sequence = "000001";
 
     try {
-      const conn = await connectDB();
-      if (conn) {
-        const totalCount = await Application.countDocuments({ villageId: village._id });
-        sequence = String(totalCount + 1).padStart(6, "0");
-      }
+      const countRes = await queryOne(
+        "SELECT COUNT(*) as count FROM applications WHERE LOWER(village_slug) = LOWER($1)",
+        [villageSlug]
+      );
+      const totalCount = Number(countRes?.count || 0);
+      sequence = String(totalCount + 1).padStart(6, "0");
     } catch {
       sequence = String(Math.floor(100000 + Math.random() * 900000));
     }
 
     const applicationNumber = `${prefix}-${serviceCode}-2026-${sequence}`;
 
+    // Insert into PostgreSQL
+    const insertRes = await dbQuery(
+      `INSERT INTO applications (
+        application_number, village_id, service_id, form_id,
+        service_name, service_slug, village_slug,
+        applicant_name, mobile_number, email, address,
+        form_data, documents, status, submitted_at
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, NOW())
+      RETURNING id, application_number`,
+      [
+        applicationNumber,
+        village.id,
+        service?.id || null,
+        activeForm?.id || null,
+        service?.name || "नागरी सेवा अर्ज",
+        serviceSlug,
+        villageSlug,
+        applicantName,
+        mobileNumber,
+        email,
+        address,
+        JSON.stringify(dynamicData),
+        JSON.stringify(uploadedDocuments),
+        "SUBMITTED",
+      ]
+    );
+
+    console.log(
+      `[Applications] Application ${applicationNumber} saved successfully to PostgreSQL. Record ID:`,
+      insertRes.rows[0]?.id
+    );
+
     try {
-      const conn = await connectDB();
-      if (conn) {
-        // Ensure Village in DB
-        let dbVillage = await Village.findOne({ slug: villageSlug });
-        if (!dbVillage) {
-          const vData = await getVillageBySlug(villageSlug);
-          if (vData) {
-            dbVillage = await Village.create({
-              name: vData.name,
-              slug: vData.slug,
-              district: vData.district,
-              taluka: vData.taluka,
-              state: "महाराष्ट्र",
-              address: `${vData.name}, ता. ${vData.taluka}, जि. ${vData.district}`,
-              phone: vData.contactPhone || "0253-2223344",
-              email: vData.contactEmail || `info@${vData.slug}.gov.in`,
-              primaryColor: "#003625",
-              secondaryColor: "#9e4300",
-            });
-          }
-        }
-
-        const vId = dbVillage ? dbVillage._id : village._id;
-
-        // Ensure Service in DB if possible
-        let dbService = await Service.findOne({ villageId: vId, slug: serviceSlug });
-        if (!dbService && service?.name && vId) {
-          try {
-            dbService = await Service.create({
-              villageId: vId,
-              name: service.name,
-              slug: serviceSlug,
-              description: service.description || "नागरिक सेवा",
-              category: service.category || "दाखले",
-              icon: service.icon || "FileText",
-              isActive: true,
-            });
-          } catch (svcErr) {
-            console.warn("[Applications] Service creation warning:", svcErr);
-          }
-        }
-
-        const sId = dbService ? dbService._id : (service?._id || undefined);
-
-        await Application.create({
-          applicationNumber,
-          villageId: vId,
-          serviceId: sId,
-          formId: activeForm?._id || sId || undefined,
-          serviceName: service?.name || "ऑनलाइन अर्ज",
-          serviceSlug: serviceSlug,
-          villageSlug: villageSlug,
-          applicantName,
-          mobileNumber,
-          email,
-          address,
-          formData: dynamicData,
-          documents: uploadedDocuments,
-          status: "SUBMITTED",
-          submittedAt: new Date(),
-        });
-      }
-    } catch (saveErr) {
-      console.warn("[Applications] Database record creation failed (fallback mode active):", saveErr);
-    }
-
-    revalidatePath(`/${villageSlug}/services`);
-    revalidatePath("/admin/applications");
-    revalidatePath("/admin/dashboard");
+      revalidatePath(`/${villageSlug}/services`);
+      revalidatePath("/admin/applications");
+      revalidatePath("/admin/dashboard");
+    } catch {}
 
     return {
       success: true,
@@ -273,6 +306,9 @@ export async function submitCitizenApplication(
     };
   } catch (err: any) {
     console.error("[Applications] Submission error:", err);
-    return { success: false, error: err.message || "अर्ज पाठवताना समस्या आली. कृपया पुन्हा प्रयत्न करा." };
+    return {
+      success: false,
+      error: err.message || "अर्ज पाठवताना समस्या आली. कृपया पुन्हा प्रयत्न करा.",
+    };
   }
 }
