@@ -8,7 +8,7 @@ const apiSecret = process.env.CLOUDINARY_API_SECRET;
 const cloudinaryUrl = process.env.CLOUDINARY_URL;
 
 export const isCloudinaryConfigured = Boolean(
-  process.env.USE_CLOUDINARY === "true" &&
+  process.env.USE_CLOUDINARY !== "false" &&
   (cloudinaryUrl || (cloudName && apiKey && apiSecret))
 );
 

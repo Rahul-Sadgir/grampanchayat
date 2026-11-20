@@ -9,13 +9,19 @@ const connectionString =
   process.env.DATABASE_URL ||
   "postgresql://postgres:123A45n6@127.0.0.1:5432/gram_panchayat_db";
 
+const isLocal =
+  !connectionString ||
+  connectionString.includes("127.0.0.1") ||
+  connectionString.includes("localhost");
+
 export const pool =
   global.pgPool ||
   new Pool({
     connectionString,
-    max: 20,
+    ssl: isLocal ? false : { rejectUnauthorized: false },
+    max: isLocal ? 20 : 10,
     idleTimeoutMillis: 30000,
-    connectionTimeoutMillis: 5000,
+    connectionTimeoutMillis: 10000,
   });
 
 if (process.env.NODE_ENV !== "production") {

@@ -1,3 +1,5 @@
+import fs from "fs";
+import path from "path";
 import dotenv from "dotenv";
 import bcrypt from "bcryptjs";
 import { pool, queryOne, dbQuery } from "../lib/db";
@@ -6,11 +8,22 @@ import { ALL_CITIZEN_SERVICES, ALL_CITIZEN_SCHEMAS } from "../data/citizen-servi
 dotenv.config({ path: ".env.local" });
 
 async function seedPg() {
-  console.log("Connecting to PostgreSQL database: gram_panchayat_db...");
+  console.log("Connecting to PostgreSQL database...");
 
   // Verify connection
   const check = await pool.query("SELECT current_database(), current_user, now();");
   console.log("Connected to PostgreSQL successfully:", check.rows[0]);
+
+  // Execute schema.sql to ensure all tables, types and indexes exist
+  console.log("Applying database schema from src/db/schema.sql...");
+  const schemaPath = path.join(process.cwd(), "src/db/schema.sql");
+  if (fs.existsSync(schemaPath)) {
+    const schemaSql = fs.readFileSync(schemaPath, "utf-8");
+    await pool.query(schemaSql);
+    console.log("Database schema applied successfully.");
+  } else {
+    console.warn("Schema file not found at:", schemaPath);
+  }
 
   // Clean old data for fresh seed
   console.log("Cleaning existing records for fresh seed...");
