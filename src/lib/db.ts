@@ -24,8 +24,41 @@ export const pool =
     connectionTimeoutMillis: 10000,
   });
 
+pool.on("connect", (client) => {
+  client.query("SET search_path TO public;");
+});
+
 if (process.env.NODE_ENV !== "production") {
   global.pgPool = pool;
+}
+
+const KNOWN_TABLES = [
+  "villages",
+  "users",
+  "services",
+  "forms",
+  "applications",
+  "notices",
+  "schemes",
+  "projects",
+  "representatives",
+  "events",
+  "rti_spendings",
+];
+
+const tableRegex = new RegExp(
+  `\\b(FROM|JOIN|UPDATE|INTO|TABLE)(\\s+)(?!(?:public|information_schema|pg_catalog)\\.)([a-z0-9_]+)`,
+  "gi"
+);
+
+export function qualifyQuery(sql: string): string {
+  if (!sql) return sql;
+  return sql.replace(tableRegex, (match, keyword, space, tableName) => {
+    if (KNOWN_TABLES.includes(tableName.toLowerCase())) {
+      return `${keyword}${space}public.${tableName}`;
+    }
+    return match;
+  });
 }
 
 // Convert snake_case database row to camelCase and ensure _id exists for backward compatibility
@@ -60,11 +93,12 @@ export async function dbQuery<R extends QueryResultRow = any>(
   params?: any[]
 ): Promise<QueryResult<R>> {
   const start = Date.now();
+  const qualifiedText = qualifyQuery(text);
   try {
-    const res = await pool.query<R>(text, params);
+    const res = await pool.query<R>(qualifiedText, params);
     return res;
   } catch (error) {
-    console.error("[PostgreSQL Query Error]:", { text, params, error });
+    console.error("[PostgreSQL Query Error]:", { text: qualifiedText, params, error });
     throw error;
   }
 }

@@ -223,7 +223,7 @@ export async function toggleVillageAdministrativeRule(
     const targetSlug = session.role === "SUPER_ADMIN" ? villageSlug : session.villageSlug;
 
     await dbQuery(
-      `UPDATE villages 
+      `UPDATE public.villages 
        SET is_under_administrative_rule = $1, updated_at = NOW() 
        WHERE LOWER(slug) = LOWER($2)`,
       [isUnderRule, targetSlug || "komalwadi"]
@@ -268,7 +268,7 @@ export async function updateAdministratorDetails(formData: FormData) {
     }
 
     await dbQuery(
-      `UPDATE villages
+      `UPDATE public.villages
        SET is_under_administrative_rule = $1,
            administrator_name = $2,
            administrator_role = $3,
