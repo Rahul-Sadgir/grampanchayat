@@ -22,11 +22,8 @@ export const pool =
     max: isLocal ? 20 : 10,
     idleTimeoutMillis: 30000,
     connectionTimeoutMillis: 10000,
+    options: "-c search_path=public",
   });
-
-pool.on("connect", (client) => {
-  client.query("SET search_path TO public;");
-});
 
 if (process.env.NODE_ENV !== "production") {
   global.pgPool = pool;
