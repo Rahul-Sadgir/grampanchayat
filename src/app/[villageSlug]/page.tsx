@@ -905,7 +905,7 @@ export default async function VillageHomePage({ params }: Props) {
       </section>
 
       {/* 10 — PUBLIC FACILITIES & MAP (भौगोलिक स्थान व सुविधा) */}
-      <section className="max-w-5xl mx-auto px-4">
+      <section id="location" className="max-w-5xl mx-auto px-4 scroll-mt-24">
         <div className="bg-[#F4EFE6] rounded-3xl p-5 sm:p-8 border border-[#E5DEC9] space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
             <div>
@@ -914,7 +914,7 @@ export default async function VillageHomePage({ params }: Props) {
                 <span>भौगोलिक स्थान व सुविधा</span>
               </div>
               <h2 className="text-xl sm:text-2xl font-extrabold text-[#003625]">
-                {village.name} मधील प्रमुख शासकीय ठिकाणे
+                {village.name} मधील प्रमुख शासकीय ठिकाणे व नकाशा
               </h2>
             </div>
             <span className="px-3 py-1 rounded-full bg-white text-[#003625] text-xs font-bold border border-[#E5DEC9] self-start sm:self-auto shadow-2xs">
@@ -953,6 +953,71 @@ export default async function VillageHomePage({ params }: Props) {
                 <h4 className="text-xs font-bold text-[#003625]">सहकारी विकास सोसायटी</h4>
                 <p className="text-[10px] text-[#526056]">खते, बियाणे व किसान पतपुरवठा</p>
               </div>
+            </div>
+          </div>
+
+          {/* Location Map of Village (कोमलवाडी थेट स्थान नकाशा) */}
+          <div className="bg-white rounded-2xl border border-[#E5DEC9] overflow-hidden shadow-xs">
+            <div className="p-4 sm:p-5 border-b border-[#E5DEC9] flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-[#FBF9F5]">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-[#003625] text-[#F5D77F] flex items-center justify-center shrink-0 shadow-xs">
+                  <Compass className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-sm sm:text-base font-extrabold text-[#003625]">
+                    {village.name} थेट स्थान नकाशा (Location Map)
+                  </h3>
+                  <p className="text-[11px] text-[#526056]">
+                    मु. {village.name}, पो. वडांगळी, ता. {taluka}, जि. {district}, महाराष्ट्र - ४२२१०३
+                  </p>
+                </div>
+              </div>
+              <a
+                href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+                  village.slug === "komalwadi"
+                    ? "Komalwadi, Sinnar, Nashik, Maharashtra"
+                    : `${village.name}, ${taluka}, ${district}, Maharashtra`
+                )}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#003625] text-white text-xs font-bold hover:bg-[#134e39] transition shadow-xs self-start sm:self-auto shrink-0"
+              >
+                <span>गुगल मॅप्सवर उघडा</span>
+                <ExternalLink className="w-3.5 h-3.5 text-[#F5D77F]" />
+              </a>
+            </div>
+
+            <div className="relative w-full h-80 sm:h-[420px] bg-slate-100">
+              <iframe
+                title={`${village.name} गाव स्थान नकाशा`}
+                src={`https://maps.google.com/maps?q=${encodeURIComponent(
+                  village.slug === "komalwadi"
+                    ? "Komalwadi, Sinnar, Nashik, Maharashtra"
+                    : `${village.name}, ${taluka}, ${district}, Maharashtra`
+                )}&t=&z=14&ie=UTF8&iwloc=&output=embed`}
+                className="w-full h-full border-0"
+                allowFullScreen
+                referrerPolicy="no-referrer-when-downgrade"
+              />
+            </div>
+
+            <div className="p-3.5 sm:p-4 bg-[#FBF9F5] border-t border-[#E5DEC9] flex flex-wrap items-center justify-between gap-3 text-xs">
+              <div className="flex items-center gap-2 text-[#526056]">
+                <MapPin className="w-4 h-4 text-[#9e4300] shrink-0" />
+                <span>स्थान निर्देशक: १९.९३७१° N, ७४.१५०३° E • ता. {taluka} (१८ किमी), जि. {district} (४२ किमी)</span>
+              </div>
+              <a
+                href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(
+                  village.slug === "komalwadi"
+                    ? "Komalwadi, Sinnar, Nashik, Maharashtra"
+                    : `${village.name}, ${taluka}, ${district}, Maharashtra`
+                )}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs font-bold text-[#9e4300] hover:underline flex items-center gap-1"
+              >
+                <span>मार्ग / दिशादर्शन मिळवा (Get Directions) →</span>
+              </a>
             </div>
           </div>
         </div>
