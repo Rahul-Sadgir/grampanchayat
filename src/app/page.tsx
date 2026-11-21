@@ -2,7 +2,8 @@ import VillageLayout from "./[villageSlug]/layout";
 import VillageHomePage from "./[villageSlug]/page";
 import type { Metadata } from "next";
 
-export const revalidate = 300;
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 export const metadata: Metadata = {
   title: "ग्रामपंचायत कोमलवाडी - अधिकृत ई-प्रशासन व डिजिटल सेवा पोर्टल",

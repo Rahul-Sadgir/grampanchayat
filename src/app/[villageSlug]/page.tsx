@@ -75,13 +75,8 @@ const iconMap: Record<string, any> = {
   HeartCrack,
 };
 
-export const revalidate = 300;
-
-export async function generateStaticParams() {
-  return [
-    { villageSlug: "komalwadi" },
-  ];
-}
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 export default async function VillageHomePage({ params }: Props) {
   const { villageSlug } = await params;
@@ -699,39 +694,35 @@ export default async function VillageHomePage({ params }: Props) {
       </section>
 
       {/* 08 — VILLAGE DEVELOPMENT PROGRESS (गावाचा विकास प्रकल्प अहवाल) */}
-      <section id="development" className="max-w-5xl mx-auto px-4">
-        <div className="bg-[#F4EFE6] rounded-3xl p-5 sm:p-8 border border-[#E5DEC9] space-y-6">
-          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
-            <div>
-              <div className="inline-flex items-center gap-1.5 text-[#9e4300] font-bold text-xs uppercase tracking-wider mb-1">
-                <Construction className="w-3.5 h-3.5" />
-                <span>पारदर्शक कारभार व सार्वजनिक परीक्षण</span>
+      {projects && projects.length > 0 && (
+        <section id="development" className="max-w-5xl mx-auto px-4">
+          <div className="bg-[#F4EFE6] rounded-3xl p-5 sm:p-8 border border-[#E5DEC9] space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
+              <div>
+                <div className="inline-flex items-center gap-1.5 text-[#9e4300] font-bold text-xs uppercase tracking-wider mb-1">
+                  <Construction className="w-3.5 h-3.5" />
+                  <span>पारदर्शक कारभार व सार्वजनिक परीक्षण</span>
+                </div>
+                <h2 className="text-xl sm:text-3xl font-extrabold text-[#003625]">
+                  गावाचा विकास प्रकल्प अहवाल
+                </h2>
               </div>
-              <h2 className="text-xl sm:text-3xl font-extrabold text-[#003625]">
-                गावाचा विकास प्रकल्प अहवाल
-              </h2>
+              <Link
+                href={`/${village.slug}/development`}
+                className="text-xs font-bold text-[#9e4300] hover:underline flex items-center gap-1 shrink-0 bg-white px-3.5 py-1.5 rounded-full border border-[#E5DEC9] shadow-2xs hover:bg-[#FBF9F5]"
+              >
+                <span>सर्व प्रकल्प पहा ({projects.length})</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
             </div>
-            <Link
-              href={`/${village.slug}/development`}
-              className="text-xs font-bold text-[#9e4300] hover:underline flex items-center gap-1 shrink-0 bg-white px-3.5 py-1.5 rounded-full border border-[#E5DEC9] shadow-2xs hover:bg-[#FBF9F5]"
-            >
-              <span>सर्व प्रकल्प पहा ({projects.length})</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </Link>
-          </div>
 
-          {projects.length === 0 ? (
-            <div className="bg-white rounded-2xl p-8 border border-[#E5DEC9] text-center text-[#526056] text-xs font-medium">
-              गावातील विकास प्रकल्पांची माहिती लवकरच अद्यतनित केली जाईल.
-            </div>
-          ) : (
             <div className="space-y-4">
               {/* Featured Development Work Card (projects[0]) */}
               {(() => {
                 const p = projects[0];
                 const isCompleted = p.status === "COMPLETED";
                 const isOngoing = p.status === "ONGOING";
-                const hasImage = p.images && p.images.length > 0 && p.images[0];
+                const hasImage = Array.isArray(p.images) && p.images.length > 0 && p.images[0];
 
                 return (
                   <div className="bg-white rounded-2xl p-5 sm:p-6 border border-[#E5DEC9] shadow-xs space-y-4">
@@ -789,11 +780,11 @@ export default async function VillageHomePage({ params }: Props) {
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-3 border-t border-[#E5DEC9] text-xs">
-                      {p.budget && (
+                      {p.budget != null && (
                         <div>
                           <span className="text-[#526056] text-[10px] block">मंजूर निधी:</span>
                           <strong className="text-[#1E2621] font-mono font-bold">
-                            ₹{p.budget.toLocaleString("en-IN")}
+                            ₹{Number(p.budget).toLocaleString("en-IN")}
                           </strong>
                         </div>
                       )}
@@ -838,10 +829,10 @@ export default async function VillageHomePage({ params }: Props) {
                           {p.description}
                         </p>
                       </div>
-                      {p.budget && (
+                      {p.budget != null && (
                         <div className="pt-2 border-t border-[#E5DEC9] flex items-center justify-between text-xs font-mono font-bold text-[#9e4300]">
                           <span className="text-[10px] font-normal text-[#526056]">निधी:</span>
-                          <span>₹{p.budget.toLocaleString("en-IN")}</span>
+                          <span>₹{Number(p.budget).toLocaleString("en-IN")}</span>
                         </div>
                       )}
                     </div>
@@ -849,9 +840,9 @@ export default async function VillageHomePage({ params }: Props) {
                 </div>
               )}
             </div>
-          )}
-        </div>
-      </section>
+          </div>
+        </section>
+      )}
 
       {/* 09 — VILLAGE PRIDE (गावाचा अभिमान / गौरव) */}
       <section className="max-w-5xl mx-auto px-4">

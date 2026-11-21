@@ -853,7 +853,24 @@ export async function getVillageProjects(villageId?: any, limit = 10, villageSlu
        LIMIT $3`,
       [slug, villageId ? String(villageId) : "", limit]
     );
-    if (projects) return projects;
+    if (projects && Array.isArray(projects)) {
+      return projects.map((p: any) => ({
+        ...p,
+        _id: (p.id || p._id || "").toString(),
+        images: Array.isArray(p.images)
+          ? p.images
+          : typeof p.images === "string"
+          ? (() => {
+              try {
+                return JSON.parse(p.images);
+              } catch {
+                return [];
+              }
+            })()
+          : [],
+        budget: p.budget != null ? Number(p.budget) : null,
+      }));
+    }
   } catch (err) {
     console.warn("[getVillageProjects] PostgreSQL error querying projects:", err);
   }

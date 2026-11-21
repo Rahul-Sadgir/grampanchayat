@@ -15,13 +15,8 @@ interface Props {
   params: Promise<{ villageSlug: string }>;
 }
 
-export const revalidate = 300;
-
-export async function generateStaticParams() {
-  return [
-    { villageSlug: "komalwadi" },
-  ];
-}
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 export default async function DevelopmentPage({ params }: Props) {
   const { villageSlug } = await params;

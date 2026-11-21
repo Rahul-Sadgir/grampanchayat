@@ -142,6 +142,7 @@ export async function saveProject(formData: FormData) {
       );
     }
 
+    revalidatePath("/");
     revalidatePath("/admin/projects");
     revalidatePath("/admin/dashboard");
     if (villageSlug) {
@@ -185,6 +186,7 @@ export async function updateProjectStatus(
       [newStatus, projectId]
     );
 
+    revalidatePath("/");
     revalidatePath("/admin/projects");
     revalidatePath("/admin/dashboard");
     if (updated?.villageSlug) {
@@ -213,8 +215,13 @@ export async function deleteProject(projectId: string) {
     }
 
     await dbQuery("DELETE FROM projects WHERE id::text = $1", [projectId]);
+    revalidatePath("/");
     revalidatePath("/admin/projects");
     revalidatePath("/admin/dashboard");
+    if (existing?.villageSlug) {
+      revalidatePath(`/${existing.villageSlug}`);
+      revalidatePath(`/${existing.villageSlug}/development`);
+    }
     return { success: true };
   } catch (error: any) {
     console.error("Error in deleteProject:", error);

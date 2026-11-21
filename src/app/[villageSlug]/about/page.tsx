@@ -30,12 +30,7 @@ interface Props {
 }
 
 export const dynamic = "force-dynamic";
-
-export async function generateStaticParams() {
-  return [
-    { villageSlug: "komalwadi" },
-  ];
-}
+export const revalidate = 0;
 
 export default async function AboutVillagePage({ params }: Props) {
   const { villageSlug } = await params;

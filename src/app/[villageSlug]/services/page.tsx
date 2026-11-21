@@ -13,7 +13,8 @@ interface Props {
   searchParams: Promise<{ tab?: string; q?: string }>;
 }
 
-export const revalidate = 300;
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 export default async function ServicesPage({ params, searchParams }: Props) {
   const { villageSlug } = await params;
